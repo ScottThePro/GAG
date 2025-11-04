@@ -411,34 +411,22 @@ end
 
 -- Detect available gear from the shop GUI
 local function GetGearStock(IgnoreNoStock: boolean?): table
-    local GearShop = PlayerGui.Gear_Shop
-    local Items = GearShop:FindFirstChild("Trowel", true).Parent
+    local GearShop = PlayerGui:FindFirstChild("Gear_Shop")
+    if not GearShop then return {} end
+    local Items = GearShop:FindFirstChild("Trowel", true)
+    if not Items then return {} end
+    local ItemsParent = Items.Parent
     local NewList = {}
-
-    -- Add "Auto Buy All Gear" at the top
-    NewList["Auto Buy All Gear"] = 0
-
-    for _, Item in next, Items:GetChildren() do
+    for _, Item in next, ItemsParent:GetChildren() do
         local MainFrame = Item:FindFirstChild("Main_Frame")
         if not MainFrame then continue end
         local StockText = MainFrame.Stock_Text.Text
-        local StockCount = tonumber(StockText:match("%d+"))
+        local StockCount = tonumber(StockText:match("%d+")) or 0
         if IgnoreNoStock and StockCount <= 0 then continue end
         NewList[Item.Name] = StockCount
         GearStock[Item.Name] = StockCount
     end
     return IgnoreNoStock and NewList or GearStock
-end
-
--- Buy all available gear
-local function BuyAllGear()
-    GetGearStock() -- refresh list
-    for GearName, Stock in pairs(GearStock) do
-        for i = 1, Stock do
-            BuyGear(GearName)
-            wait(0.1)
-        end
-    end
 end
 
 -- Buy only the gear selected in dropdown
@@ -447,7 +435,10 @@ local function BuySelectedGear()
     if not Gear or Gear == "" then return end
 
     if Gear == "Auto Buy All Gear" then
-        BuyAllGear()
+        for Name, _ in pairs(GearStock) do
+            BuyGear(Name)
+            wait(0.1)
+        end
         return
     end
 
@@ -458,25 +449,32 @@ local function BuySelectedGear()
     end
 end
 
--- Gear dropdown
+-- Gear dropdown with "Auto Buy All Gear" at top
 SelectedGear = GearNode:Combo({
     Label = "Select Gear",
     Selected = "",
     GetItems = function()
-        local ItemsList = GetGearStock() -- returns all gear
-        -- Insert "Auto Buy All Gear" at the top
-        local NewList = {["Auto Buy All Gear"] = 0}
-        for k, v in pairs(ItemsList) do
-            NewList[k] = v
+        local ItemsList = GetGearStock()
+        local OrderedList = {}
+        table.insert(OrderedList, "Auto Buy All Gear") -- always first
+        for GearName, _ in pairs(ItemsList) do
+            table.insert(OrderedList, GearName)
         end
-        return NewList
+        return OrderedList
+    end,
+    Callback = function(_, Selected)
+        if Selected == "Auto Buy All Gear" then
+            AutoGear:SetLabel("Auto Buy All Gear") -- Change toggle label
+        else
+            AutoGear:SetLabel("Auto Buy Selected Gear")
+        end
     end
 })
 
 -- Auto-buy toggle
 AutoGear = GearNode:Checkbox({
     Value = false,
-    Label = "Auto-Buy Selected Gear"
+    Label = "Auto Buy Selected Gear"
 })
 
 -- Manual buy button
@@ -485,11 +483,29 @@ GearNode:Button({
     Callback = BuySelectedGear
 })
 
+-- Auto-buy loop with automatic refresh
+coroutine.wrap(function()
+    while wait(0.5) do
+        if AutoGear.Value then
+            GetGearStock()        -- refresh gear list
+            BuySelectedGear()     -- buy selected gear or all
+        end
+    end
+end)()
+
+-- Automatically refresh gear list whenever Gear_Shop GUI updates
+PlayerGui.ChildAdded:Connect(function(Child)
+    if Child.Name == "Gear_Shop" then
+        SelectedGear:GetItems() -- refresh dropdown
+    end
+end)
+
 -- Auto-buy loop
 coroutine.wrap(function()
     while wait(0.5) do
         if AutoGear.Value then
-            BuySelectedGear()
+            GetGearStock()      -- refresh gear list
+            BuySelectedGear()   -- buy selected gear or all
         end
     end
 end)()
@@ -498,5 +514,5 @@ end)()
 RunService.Stepped:Connect(NoclipLoop)
 Backpack.ChildAdded:Connect(AutoSellCheck)
 
---// Start 1
+--// Start
 StartServices()
