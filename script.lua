@@ -397,7 +397,7 @@ AutoWalkAllowRandom = WallNode:Checkbox({Value = true, Label = "Allow random poi
 NoClip = WallNode:Checkbox({Value = false, Label = "NoClip"})
 AutoWalkMaxWait = WallNode:SliderInt({Label = "Max delay", Value = 10, Minimum = 1, Maximum = 120})
 
---// Auto-Gear
+--// Auto-Gear 🧤
 local GearNode = Window:TreeNode({Title="Auto-Gear 🧤"})
 local GearStock = {}
 local SelectedGear
@@ -411,9 +411,13 @@ end
 
 -- Detect available gear from the shop GUI
 local function GetGearStock(IgnoreNoStock: boolean?): table
-    local SeedShop = PlayerGui.Gear_Shop
-    local Items = SeedShop:FindFirstChild("Trowel", true).Parent
+    local GearShop = PlayerGui.Gear_Shop
+    local Items = GearShop:FindFirstChild("Trowel", true).Parent
     local NewList = {}
+
+    -- Add "Auto Buy All Gear" at the top
+    NewList["Auto Buy All Gear"] = 0
+
     for _, Item in next, Items:GetChildren() do
         local MainFrame = Item:FindFirstChild("Main_Frame")
         if not MainFrame then continue end
@@ -426,10 +430,27 @@ local function GetGearStock(IgnoreNoStock: boolean?): table
     return IgnoreNoStock and NewList or GearStock
 end
 
+-- Buy all available gear
+local function BuyAllGear()
+    GetGearStock() -- refresh list
+    for GearName, Stock in pairs(GearStock) do
+        for i = 1, Stock do
+            BuyGear(GearName)
+            wait(0.1)
+        end
+    end
+end
+
 -- Buy only the gear selected in dropdown
 local function BuySelectedGear()
     local Gear = SelectedGear.Selected
     if not Gear or Gear == "" then return end
+
+    if Gear == "Auto Buy All Gear" then
+        BuyAllGear()
+        return
+    end
+
     local Stock = GearStock[Gear] or 1
     for i = 1, Stock do
         BuyGear(Gear)
@@ -460,8 +481,7 @@ GearNode:Button({
 coroutine.wrap(function()
     while wait(0.5) do
         if AutoGear.Value then
-            GetGearStock()      -- refresh gear list
-            BuySelectedGear()   -- buy only the selected gear
+            BuySelectedGear()
         end
     end
 end)()
@@ -470,5 +490,5 @@ end)()
 RunService.Stepped:Connect(NoclipLoop)
 Backpack.ChildAdded:Connect(AutoSellCheck)
 
---// Start
+--// Start 1
 StartServices()
