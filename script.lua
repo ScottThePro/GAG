@@ -410,7 +410,7 @@ local function BuyGear(GearName)
 end
 
 -- Detect available gear from the shop GUI
-local function GetSeedStock(IgnoreNoStock: boolean?): table
+local function GetGearStock(IgnoreNoStock: boolean?): table
     local SeedShop = PlayerGui.Gear_Shop
     local Items = SeedShop:FindFirstChild("Trowel", true).Parent
     local NewList = {}
