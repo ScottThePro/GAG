@@ -462,7 +462,15 @@ end
 SelectedGear = GearNode:Combo({
     Label = "Select Gear",
     Selected = "",
-    GetItems = GetGearStock
+    GetItems = function()
+        local ItemsList = GetGearStock() -- returns all gear
+        -- Insert "Auto Buy All Gear" at the top
+        local NewList = {["Auto Buy All Gear"] = 0}
+        for k, v in pairs(ItemsList) do
+            NewList[k] = v
+        end
+        return NewList
+    end
 })
 
 -- Auto-buy toggle
