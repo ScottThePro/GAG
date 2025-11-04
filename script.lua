@@ -435,23 +435,23 @@ local function GetGearStock(IgnoreNoStock: boolean?): table
     return IgnoreNoStock and NewList or GearStock
 end
 
--- Buy only the gear selected in dropdown
+-- Buy selected gear or all gear
 local function BuySelectedGear()
-    local Gear = SelectedGear.Selected
-    if not Gear or Gear == "" then return end
-
-    if Gear == "Auto Buy All Gear" then
+    if SelectedGear.Selected == "Auto Buy All Gear" then
+        -- Refresh gear stock
+        GetGearStock()
         for Name, _ in pairs(GearStock) do
             BuyGear(Name)
             wait(0.1)
         end
-        return
-    end
-
-    local Stock = GearStock[Gear] or 1
-    for i = 1, Stock do
-        BuyGear(Gear)
-        wait(0.1)
+    else
+        local Gear = SelectedGear.Selected
+        if not Gear or Gear == "" then return end
+        local Stock = GearStock[Gear] or 1
+        for i = 1, Stock do
+            BuyGear(Gear)
+            wait(0.1)
+        end
     end
 end
 
@@ -470,7 +470,7 @@ SelectedGear = GearNode:Combo({
     end,
     Callback = function(_, Selected)
         if Selected == "Auto Buy All Gear" then
-            AutoGear:SetLabel("Auto Buy All Gear") -- now safe, checkbox exists
+            AutoGear:SetLabel("Auto Buy All Gear")
         else
             AutoGear:SetLabel("Auto Buy Selected Gear")
         end
@@ -483,17 +483,16 @@ GearNode:Button({
     Callback = BuySelectedGear
 })
 
--- Auto-buy loop with automatic refresh
+-- Auto-buy loop
 coroutine.wrap(function()
     while wait(0.5) do
         if AutoGear.Value then
-            GetGearStock()        -- refresh gear list
-            BuySelectedGear()     -- buy selected gear or all
+            BuySelectedGear() -- this will handle "Auto Buy All Gear" correctly now
         end
     end
 end)()
 
--- Automatically refresh gear list whenever Gear_Shop GUI updates
+-- Refresh dropdown if Gear_Shop GUI is added
 PlayerGui.ChildAdded:Connect(function(Child)
     if Child.Name == "Gear_Shop" then
         SelectedGear:GetItems() -- refresh dropdown
@@ -503,5 +502,5 @@ end)
 RunService.Stepped:Connect(NoclipLoop)
 Backpack.ChildAdded:Connect(AutoSellCheck)
 
---// Start 1
+--// Start 2
 StartServices()
