@@ -409,33 +409,25 @@ local function BuyGear(GearName)
     GameEvents.BuyGearStock:FireServer(GearName)
 end
 
--- Detect available gear from the shop GUI and add "All Gear" at the top
+-- Detect available gear from the shop GUI
 local function GetGearStock()
     local GearShop = PlayerGui:Gear_Shop
     local Items = GearShop:FindFirstChild("Trowel", true).Parent
 
     local NewItems = {}
-    local TempStock = {}
-
-    -- Collect actual gear and stock
     for _, Item in next, Items:GetChildren() do
         if Item:IsA("Frame") and Item.Name ~= "UIListLayout" then
             local MainFrame = Item:FindFirstChild("Main_Frame")
             if MainFrame then
                 local StockText = MainFrame.Stock_Text.Text
                 local StockCount = tonumber(StockText:match("%d+")) or 0
-                TempStock[Item.Name] = StockCount
+                NewItems[Item.Name] = StockCount
                 GearStock[Item.Name] = StockCount
             end
         end
     end
-
-    -- Add "All Gear" at the top
+    -- Add "All Gear" option
     NewItems["All Gear"] = 1
-    for G, S in pairs(TempStock) do
-        NewItems[G] = S
-    end
-
     return NewItems
 end
 
