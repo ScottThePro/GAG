@@ -59,7 +59,7 @@ local SelectedSeed, AutoPlantRandom, AutoPlant, AutoHarvest, AutoBuy, SellThresh
 --// GUI Setup
 local function CreateWindow()
     local Window = ReGui:Window({
-        Title = `{GameInfo.Name} | Depso`,
+        Title = `{GameInfo.Name} | Cheat Engine`,
         Theme = "GardenTheme",
         Size = UDim2.fromOffset(300, 200)
     })
