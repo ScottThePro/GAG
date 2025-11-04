@@ -403,6 +403,12 @@ local GearStock = {}
 local SelectedGear
 local AutoGear
 
+-- Auto-buy toggle (define first)
+AutoGear = GearNode:Checkbox({
+    Value = false,
+    Label = "Auto Buy Selected Gear"
+})
+
 -- Buy a specific gear
 local function BuyGear(GearName)
     if not GearName or GearName == "" then return end
@@ -464,17 +470,11 @@ SelectedGear = GearNode:Combo({
     end,
     Callback = function(_, Selected)
         if Selected == "Auto Buy All Gear" then
-            AutoGear:SetLabel("Auto Buy All Gear") -- Change toggle label
+            AutoGear:SetLabel("Auto Buy All Gear") -- now safe, checkbox exists
         else
             AutoGear:SetLabel("Auto Buy Selected Gear")
         end
     end
-})
-
--- Auto-buy toggle
-AutoGear = GearNode:Checkbox({
-    Value = false,
-    Label = "Auto Buy Selected Gear"
 })
 
 -- Manual buy button
@@ -499,20 +499,9 @@ PlayerGui.ChildAdded:Connect(function(Child)
         SelectedGear:GetItems() -- refresh dropdown
     end
 end)
-
--- Auto-buy loop
-coroutine.wrap(function()
-    while wait(0.5) do
-        if AutoGear.Value then
-            GetGearStock()      -- refresh gear list
-            BuySelectedGear()   -- buy selected gear or all
-        end
-    end
-end)()
-
 --// Connections
 RunService.Stepped:Connect(NoclipLoop)
 Backpack.ChildAdded:Connect(AutoSellCheck)
 
---// Start
+--// Start 1
 StartServices()
