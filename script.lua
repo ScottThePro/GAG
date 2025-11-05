@@ -396,21 +396,20 @@ local function GetMatchingCrops(Required: table)
     return ToSubmit
 end
 
+--// Smart Auto-Event Submission (NPC ProximityPrompt)
 local function SubmitEventFruits()
-    local SafariEvent = ReplicatedStorage:WaitForChild("GameEvents"):WaitForChild("SafariEvent")
-    local Safari_SubmitItemRE = SafariEvent:WaitForChild("Safari_SubmitItemRE")
-
-    local Required = GetRequiredFruits()
-    if not next(Required) then return end
-
-    local CropsToSubmit = GetMatchingCrops(Required)
-    for _, FruitName in next, CropsToSubmit do
+    -- Find the NPC ProximityPrompt
+    local safariNPCPrompt = workspace:WaitForChild("Interaction")
+        .UpdateItems.SafariEvent["Safari platform"]
+        .NPC["Safari Joyce"].HumanoidRootPart:FindFirstChildOfClass("ProximityPrompt")
+    
+    if safariNPCPrompt then
         pcall(function()
-            Safari_SubmitItemRE:FireServer(FruitName)
+            fireproximityprompt(safariNPCPrompt)
         end)
-        wait(0.1)
     end
 end
+
 
 --// Start services
 local function StartServices()
@@ -421,7 +420,11 @@ local function StartServices()
     MakeLoop(AutoHarvest, function() HarvestPlants(PlantsPhysical) end)
     MakeLoop(AutoBuy, BuyAllSelectedSeeds)
     MakeLoop(AutoPlant, AutoPlantLoop)
-    MakeLoop(AutoSubmitEvent, function() pcall(SubmitEventFruits) end)
+    MakeLoop(AutoSubmitEvent, function()
+    if AutoSubmitEvent and AutoSubmitEvent.Value then
+        SubmitEventFruits()
+    end
+end)
 end
 
 --// Connections
@@ -564,5 +567,5 @@ end)()
 local EventNode = Window:TreeNode({Title="Auto-Event 🍇"})
 AutoSubmitEvent = EventNode:Checkbox({Value = false, Label = "Auto Submit Required Fruits"})
 
--- Start everything
+-- Start everything 1
 StartServices()
