@@ -364,50 +364,55 @@ local function GetRequiredFruits()
     local RequiredFruitsFolder = SafariEvent:FindFirstChild("RequiredFruits")
     if not RequiredFruitsFolder then return {} end
 
-    local Required = {}
+    local RequiredFruits = {}
     for _, Fruit in next, RequiredFruitsFolder:GetChildren() do
         local Name = Fruit:FindFirstChild("Name")
         local Amount = Fruit:FindFirstChild("Amount")
         if Name and Amount then
-            Required[Name.Value] = Amount.Value
+            RequiredFruits[Name.Value] = Amount.Value
         end
     end
-    return Required
+    return RequiredFruits
 end
 
-local function GetMatchingFruits(Required)
-    local Inventory = GetInvCrops()
+local function GetMatchingCrops(Required)
+    local Crops = GetInvCrops()
     local ToSubmit = {}
     local SubmittedCount = {}
 
-    for _, Item in next, Inventory do
-        local ItemNameObj = Item:FindFirstChild("Item_String")
+    for _, Crop in next, Crops do
+        local ItemNameObj = Crop:FindFirstChild("Item_String")
         if not ItemNameObj then continue end
         local ItemName = ItemNameObj.Value
-
         if Required[ItemName] then
             SubmittedCount[ItemName] = SubmittedCount[ItemName] or 0
             if SubmittedCount[ItemName] < Required[ItemName] then
-                table.insert(ToSubmit, Item)
+                table.insert(ToSubmit, Crop)
                 SubmittedCount[ItemName] += 1
             end
         end
     end
-
     return ToSubmit
 end
 
-local function SubmitEventFruits()
-    local SafariEvent = ReplicatedStorage:WaitForChild("GameEvents"):WaitForChild("SafariEvent")
-    local SubmitAllRE = SafariEvent:WaitForChild("Safari_SubmitAllRE")
-    local Required = GetRequiredFruits()
-    local FruitsToSubmit = GetMatchingFruits(Required)
+--// Auto-submit function that actually triggers the NPC prompt
+local function AutoSubmitEventFruits()
+    local EventPlatform = workspace:FindFirstChild("Interaction") 
+        and workspace.Interaction:FindFirstChild("UpdateItems") 
+        and workspace.Interaction.UpdateItems:FindFirstChild("SafariEvent")
+    if not EventPlatform then return end
 
-    if #FruitsToSubmit == 0 then return end
+    local NPC = EventPlatform:FindFirstChild("Safari platform")
+        and EventPlatform["Safari platform"]:FindFirstChild("NPC")
+        and EventPlatform["Safari platform"].NPC:FindFirstChild("Safari Joyce")
+    if not NPC then return end
 
-    pcall(function()
-        SubmitAllRE:FireServer(FruitsToSubmit)
-    end)
+    local Prompt = NPC:FindFirstChild("HumanoidRootPart") 
+        and NPC.HumanoidRootPart:FindFirstChild("ProximityPrompt")
+    if not Prompt then return end
+
+    -- Fire the ProximityPrompt, simulating interaction
+    fireproximityprompt(Prompt)
 end
 
 --// Start services
@@ -566,5 +571,5 @@ end)
 local EventNode = Window:TreeNode({Title="Auto-Event 🍇"})
 AutoSubmitEvent = EventNode:Checkbox({Value = false, Label = "Auto Submit Required Fruits"})
 
--- Start everything
+-- Start everything 1
 StartServices()
