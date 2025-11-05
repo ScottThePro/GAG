@@ -52,6 +52,7 @@ local SelectedSeed, AutoPlantRandom, AutoPlant, AutoHarvest, AutoBuy, SellThresh
 local SelectedSeedStock, AutoSubmitEvent
 local SelectedGear, AutoGear
 local AutoSell, AutoWalk, AutoWalkStatus, AutoWalkMaxWait
+local AutoBuyEventShop, SelectedEventShopItem
 
 --// GUI Setup
 local function CreateWindow()
@@ -359,13 +360,95 @@ local function MakeLoop(Toggle, Func)
 end
 
 --// Smart Event Submission Functions
+local function GetRequiredFruits()
+    local SafariEvent = ReplicatedStorage:WaitForChild("GameEvents"):WaitForChild("SafariEvent")
+    local RequiredFruitsFolder = SafariEvent:FindFirstChild("RequiredFruits")
+    if not RequiredFruitsFolder then return {} end
+
+    local RequiredFruits = {}
+    for _, Fruit in next, RequiredFruitsFolder:GetChildren() do
+        local Name = Fruit:FindFirstChild("Name")
+        local Amount = Fruit:FindFirstChild("Amount")
+        if Name and Amount then
+            RequiredFruits[Name.Value] = Amount.Value
+        end
+    end
+    return RequiredFruits
+end
+
+local function GetMatchingCrops(Required)
+    local Crops = GetInvCrops()
+    local ToSubmit = {}
+    local SubmittedCount = {}
+
+    for _, Crop in next, Crops do
+        local ItemNameObj = Crop:FindFirstChild("Item_String")
+        if not ItemNameObj then continue end
+        local ItemName = ItemNameObj.Value
+        if Required[ItemName] then
+            SubmittedCount[ItemName] = SubmittedCount[ItemName] or 0
+            if SubmittedCount[ItemName] < Required[ItemName] then
+                table.insert(ToSubmit, Crop)
+                SubmittedCount[ItemName] += 1
+            end
+        end
+    end
+    return ToSubmit
+end
+
 local function AutoSubmitEventFruits()
-    local SafariEvent = GameEvents:WaitForChild("SafariEvent")
-    local SubmitAll = SafariEvent:WaitForChild("Safari_SubmitAllRe")
+    local Required = GetRequiredFruits()
+    if not next(Required) then return end
+
+    local ToSubmit = GetMatchingCrops(Required)
+    if #ToSubmit == 0 then return end
+
+    local EventPlatform = workspace:FindFirstChild("Interaction") 
+        and workspace.Interaction:FindFirstChild("UpdateItems") 
+        and workspace.Interaction.UpdateItems:FindFirstChild("SafariEvent")
+    if not EventPlatform then return end
+
+    local NPC = EventPlatform:FindFirstChild("Safari platform")
+        and EventPlatform["Safari platform"]:FindFirstChild("NPC")
+        and EventPlatform["Safari platform"].NPC:FindFirstChild("Safari Joyce")
+    if not NPC then return end
+
+    local Prompt = NPC:FindFirstChild("HumanoidRootPart") 
+        and NPC.HumanoidRootPart:FindFirstChild("ProximityPrompt")
+    if not Prompt then return end
+
+    fireproximityprompt(Prompt)
+end
+
+--// Auto-Event Shop Buy Functions
+local BuyEventShopStock = ReplicatedStorage.GameEvents:WaitForChild("BuyEventShopStock")
+
+local function GetEventShopItems()
+    local ShopFolder = ReplicatedStorage:WaitForChild("GameEvents"):WaitForChild("SafariEventShop")
+    local ItemsList = {"Buy All Event Items"}
+    for _, Item in next, ShopFolder:GetChildren() do
+        table.insert(ItemsList, Item.Name)
+    end
+    return ItemsList
+end
+
+local function AutoBuyEventShopItems()
+    if not AutoBuyEventShop or not AutoBuyEventShop.Value then return end
+    local ShopFolder = ReplicatedStorage.GameEvents:WaitForChild("SafariEventShop")
     
-    pcall(function()
-        SubmitAll:FireServer(LocalPlayer)
-    end)
+    local ItemsToBuy = {}
+    if SelectedEventShopItem.Selected == "Buy All Event Items" then
+        for _, Item in next, ShopFolder:GetChildren() do
+            table.insert(ItemsToBuy, Item.Name)
+        end
+    else
+        table.insert(ItemsToBuy, SelectedEventShopItem.Selected)
+    end
+
+    for _, ItemName in next, ItemsToBuy do
+        BuyEventShopStock:FireServer(ItemName, "Safari Shop")
+        wait(0.1)
+    end
 end
 
 --// Start services
@@ -378,6 +461,7 @@ local function StartServices()
     MakeLoop(AutoBuy, BuyAllSelectedSeeds)
     MakeLoop(AutoPlant, AutoPlantLoop)
     MakeLoop(AutoSubmitEvent, function() pcall(AutoSubmitEventFruits) end)
+    MakeLoop(AutoBuyEventShop, AutoBuyEventShopItems)
 end
 
 --// Connections
@@ -518,9 +602,14 @@ coroutine.wrap(function()
     end
 end)()
 
--- Auto-Event Submission
-local EventNode = Window:TreeNode({Title="Auto-Event 🍇"})
-AutoSubmitEvent = EventNode:Checkbox({Value = false, Label = "Auto Submit Required Fruits"})
+-- Auto-Event 🍇
+AutoBuyEventShop = EventNode:Checkbox({Value = false, Label = "Auto Buy Event Shop Items"})
 
--- Start everything 2
+SelectedEventShopItem = EventNode:Combo({
+    Label = "Select Event Item",
+    Selected = "Buy All Event Items",
+    GetItems = GetEventShopItems
+})
+
+-- Start everything
 StartServices()
