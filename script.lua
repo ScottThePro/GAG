@@ -395,8 +395,13 @@ local function GetMatchingCrops(Required)
     return ToSubmit
 end
 
---// Auto-submit function that actually triggers the NPC prompt
 local function AutoSubmitEventFruits()
+    local Required = GetRequiredFruits()
+    if not next(Required) then return end
+
+    local ToSubmit = GetMatchingCrops(Required)
+    if #ToSubmit == 0 then return end
+
     local EventPlatform = workspace:FindFirstChild("Interaction") 
         and workspace.Interaction:FindFirstChild("UpdateItems") 
         and workspace.Interaction.UpdateItems:FindFirstChild("SafariEvent")
@@ -411,7 +416,6 @@ local function AutoSubmitEventFruits()
         and NPC.HumanoidRootPart:FindFirstChild("ProximityPrompt")
     if not Prompt then return end
 
-    -- Fire the ProximityPrompt, simulating interaction
     fireproximityprompt(Prompt)
 end
 
@@ -424,18 +428,15 @@ local function StartServices()
     MakeLoop(AutoHarvest, function() HarvestPlants(PlantsPhysical) end)
     MakeLoop(AutoBuy, BuyAllSelectedSeeds)
     MakeLoop(AutoPlant, AutoPlantLoop)
-    MakeLoop(AutoSubmitEvent, function() pcall(SubmitEventFruits) end)
+    MakeLoop(AutoSubmitEvent, function() pcall(AutoSubmitEventFruits) end)
 end
 
 --// Connections
 RunService.Stepped:Connect(NoclipLoop)
 Backpack.ChildAdded:Connect(AutoSellCheck)
-
--- Refresh seed dropdown if Seed_Shop GUI appears
 PlayerGui.ChildAdded:Connect(function(Child)
-    if Child.Name == "Seed_Shop" then
-        if SelectedSeedStock and SelectedSeedStock.GetItems then SelectedSeedStock:GetItems() end
-    end
+    if Child.Name == "Seed_Shop" and SelectedSeedStock and SelectedSeedStock.GetItems then SelectedSeedStock:GetItems() end
+    if Child.Name == "Gear_Shop" and SelectedGear and SelectedGear.GetItems then SelectedGear:GetItems() end
 end)
 
 --// Window
@@ -472,7 +473,8 @@ SelectedSeedStock = BuyNode:Combo({
         return OrderedList
     end,
     Callback = function(_, Selected)
-        if Selected == "Auto Buy All Seeds" then
+        if Selected == "Auto Buy All Seeds"
+ then
             if AutoBuy then AutoBuy:SetLabel("Auto Buy All Seeds") end
         else
             if AutoBuy then AutoBuy:SetLabel("Auto Buy Selected Seed") end
@@ -501,10 +503,12 @@ AutoWalkMaxWait = WalkNode:SliderInt({Label = "Max delay", Value = 10, Minimum =
 local GearNode = Window:TreeNode({Title="Auto-Gear 🧤"})
 local GearStock = {}
 AutoGear = GearNode:Checkbox({Value = false, Label = "Auto Buy Selected Gear"})
+
 local function BuyGear(GearName)
     if not GearName or GearName == "" then return end
     GameEvents.BuyGearStock:FireServer(GearName)
 end
+
 local function GetGearStock(IgnoreNoStock)
     local GearShop = PlayerGui:FindFirstChild("Gear_Shop")
     if not GearShop then return {} end
@@ -523,6 +527,7 @@ local function GetGearStock(IgnoreNoStock)
     end
     return IgnoreNoStock and NewList or GearStock
 end
+
 local function BuySelectedGear()
     if SelectedGear and SelectedGear.Selected == "Auto Buy All Gear" then
         GetGearStock()
@@ -540,6 +545,7 @@ local function BuySelectedGear()
         end
     end
 end
+
 SelectedGear = GearNode:Combo({
     Label = "Select Gear",
     Selected = "",
@@ -555,21 +561,18 @@ SelectedGear = GearNode:Combo({
         if Selected == "Auto Buy All Gear" then AutoGear:SetLabel("Auto Buy All Gear") else AutoGear:SetLabel("Auto Buy Selected Gear") end
     end
 })
+
 GearNode:Button({Text = "Buy Selected Gear", Callback = BuySelectedGear})
+
 coroutine.wrap(function()
     while wait(0.5) do
         if AutoGear and AutoGear.Value then BuySelectedGear() end
     end
 end)()
-PlayerGui.ChildAdded:Connect(function(Child)
-    if Child.Name == "Gear_Shop" then
-        if SelectedGear and SelectedGear.GetItems then SelectedGear:GetItems() end
-    end
-end)
 
 -- Auto-Event Submission
 local EventNode = Window:TreeNode({Title="Auto-Event 🍇"})
 AutoSubmitEvent = EventNode:Checkbox({Value = false, Label = "Auto Submit Required Fruits"})
 
--- Start everything 1
+-- Start everything
 StartServices()
