@@ -364,30 +364,31 @@ local function GetRequiredFruits()
     local RequiredFruitsFolder = SafariEvent:FindFirstChild("RequiredFruits")
     if not RequiredFruitsFolder then return {} end
 
-    local RequiredFruits = {}
+    local Required = {}
     for _, Fruit in next, RequiredFruitsFolder:GetChildren() do
         local Name = Fruit:FindFirstChild("Name")
         local Amount = Fruit:FindFirstChild("Amount")
         if Name and Amount then
-            RequiredFruits[Name.Value] = Amount.Value
+            Required[Name.Value] = Amount.Value
         end
     end
-    return RequiredFruits
+    return Required
 end
 
-local function GetMatchingCrops(Required: table)
-    local Crops = GetInvCrops()
+local function GetMatchingFruits(Required)
+    local Inventory = GetInvCrops()
     local ToSubmit = {}
     local SubmittedCount = {}
 
-    for _, Crop in next, Crops do
-        local ItemNameObj = Crop:FindFirstChild("Item_String")
+    for _, Item in next, Inventory do
+        local ItemNameObj = Item:FindFirstChild("Item_String")
         if not ItemNameObj then continue end
         local ItemName = ItemNameObj.Value
+
         if Required[ItemName] then
             SubmittedCount[ItemName] = SubmittedCount[ItemName] or 0
             if SubmittedCount[ItemName] < Required[ItemName] then
-                table.insert(ToSubmit, ItemName) -- send name, not object
+                table.insert(ToSubmit, Item)
                 SubmittedCount[ItemName] += 1
             end
         end
@@ -396,20 +397,18 @@ local function GetMatchingCrops(Required: table)
     return ToSubmit
 end
 
---// Smart Auto-Event Submission (NPC ProximityPrompt)
 local function SubmitEventFruits()
-    -- Find the NPC ProximityPrompt
-    local safariNPCPrompt = workspace:WaitForChild("Interaction")
-        .UpdateItems.SafariEvent["Safari platform"]
-        .NPC["Safari Joyce"].HumanoidRootPart:FindFirstChildOfClass("ProximityPrompt")
-    
-    if safariNPCPrompt then
-        pcall(function()
-            fireproximityprompt(safariNPCPrompt)
-        end)
-    end
-end
+    local SafariEvent = ReplicatedStorage:WaitForChild("GameEvents"):WaitForChild("SafariEvent")
+    local SubmitAllRE = SafariEvent:WaitForChild("Safari_SubmitAllRE")
+    local Required = GetRequiredFruits()
+    local FruitsToSubmit = GetMatchingFruits(Required)
 
+    if #FruitsToSubmit == 0 then return end
+
+    pcall(function()
+        SubmitAllRE:FireServer(FruitsToSubmit)
+    end)
+end
 
 --// Start services
 local function StartServices()
@@ -420,22 +419,17 @@ local function StartServices()
     MakeLoop(AutoHarvest, function() HarvestPlants(PlantsPhysical) end)
     MakeLoop(AutoBuy, BuyAllSelectedSeeds)
     MakeLoop(AutoPlant, AutoPlantLoop)
-    MakeLoop(AutoSubmitEvent, function()
-    if AutoSubmitEvent and AutoSubmitEvent.Value then
-        SubmitEventFruits()
-    end
-end)
+    MakeLoop(AutoSubmitEvent, function() pcall(SubmitEventFruits) end)
 end
 
 --// Connections
 RunService.Stepped:Connect(NoclipLoop)
 Backpack.ChildAdded:Connect(AutoSellCheck)
 
+-- Refresh seed dropdown if Seed_Shop GUI appears
 PlayerGui.ChildAdded:Connect(function(Child)
     if Child.Name == "Seed_Shop" then
         if SelectedSeedStock and SelectedSeedStock.GetItems then SelectedSeedStock:GetItems() end
-    elseif Child.Name == "Gear_Shop" then
-        if SelectedGear and SelectedGear.GetItems then SelectedGear:GetItems() end
     end
 end)
 
@@ -562,10 +556,15 @@ coroutine.wrap(function()
         if AutoGear and AutoGear.Value then BuySelectedGear() end
     end
 end)()
+PlayerGui.ChildAdded:Connect(function(Child)
+    if Child.Name == "Gear_Shop" then
+        if SelectedGear and SelectedGear.GetItems then SelectedGear:GetItems() end
+    end
+end)
 
 -- Auto-Event Submission
 local EventNode = Window:TreeNode({Title="Auto-Event 🍇"})
 AutoSubmitEvent = EventNode:Checkbox({Value = false, Label = "Auto Submit Required Fruits"})
 
--- Start everything 1
+-- Start everything
 StartServices()
