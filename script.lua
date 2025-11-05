@@ -397,19 +397,23 @@ local function GetMatchingCrops(Required: table)
 end
 
 local function SubmitEventFruits()
+    local SafariEvent = ReplicatedStorage:WaitForChild("GameEvents"):WaitForChild("SafariEvent")
+    local Safari_SubmitItemRE = SafariEvent:WaitForChild("Safari_SubmitItemRE") -- individual submission
     local Required = GetRequiredFruits()
-    if next(Required) == nil then return end
+    if not next(Required) then return end
 
     local CropsToSubmit = GetMatchingCrops(Required)
-    if #CropsToSubmit == 0 then return end
-
-    local Safari_SubmitAllRE = ReplicatedStorage.GameEvents.SafariEvent:WaitForChild("Safari_SubmitAllRE")
     for _, Crop in next, CropsToSubmit do
-        pcall(function()
-            Safari_SubmitAllRE:FireServer(Crop)
-        end)
+        local ItemNameObj = Crop:FindFirstChild("Item_String")
+        if ItemNameObj then
+            pcall(function()
+                Safari_SubmitItemRE:FireServer(ItemNameObj.Value)
+            end)
+            wait(0.1)
+        end
     end
 end
+
 
 --// Start services
 local function StartServices()
@@ -567,5 +571,5 @@ end)
 local EventNode = Window:TreeNode({Title="Auto-Event 🍇"})
 AutoSubmitEvent = EventNode:Checkbox({Value = false, Label = "Auto Submit Required Fruits"})
 
--- Start everything
+-- Start everything 2
 StartServices()
