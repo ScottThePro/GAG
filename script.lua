@@ -52,7 +52,9 @@ local SelectedSeed, AutoPlantRandom, AutoPlant, AutoHarvest, AutoBuy, SellThresh
 local SelectedSeedStock, AutoSubmitEvent
 local SelectedGear, AutoGear
 local AutoSell, AutoWalk, AutoWalkStatus, AutoWalkMaxWait
+
 local AutoBuyEventShop, SelectedEventShopItem
+local EventShopStock = {}
 
 --// GUI Setup
 local function CreateWindow()
@@ -420,34 +422,32 @@ local function AutoSubmitEventFruits()
     fireproximityprompt(Prompt)
 end
 
---// Auto-Event Shop Buy Functions
-local BuyEventShopStock = ReplicatedStorage.GameEvents:WaitForChild("BuyEventShopStock")
-
+--// Event Shop Functions
 local function GetEventShopItems()
-    local ShopFolder = ReplicatedStorage:WaitForChild("GameEvents"):WaitForChild("SafariEventShop")
-    local ItemsList = {"Buy All Event Items"}
-    for _, Item in next, ShopFolder:GetChildren() do
-        table.insert(ItemsList, Item.Name)
+    local Shop = PlayerGui:FindFirstChild("Safari_Shop")
+    if not Shop then return {"Buy All Event Items"} end
+    local Items = {}
+    for _, Item in next, Shop:GetChildren() do
+        if Item:IsA("Frame") and Item.Name ~= "" then
+            table.insert(Items, Item.Name)
+        end
     end
-    return ItemsList
+    table.sort(Items)
+    table.insert(Items, 1, "Buy All Event Items")
+    return Items
 end
 
-local function AutoBuyEventShopItems()
-    if not AutoBuyEventShop or not AutoBuyEventShop.Value then return end
-    local ShopFolder = ReplicatedStorage.GameEvents:WaitForChild("SafariEventShop")
-    
-    local ItemsToBuy = {}
-    if SelectedEventShopItem.Selected == "Buy All Event Items" then
-        for _, Item in next, ShopFolder:GetChildren() do
-            table.insert(ItemsToBuy, Item.Name)
+local function BuyEventShopItem(ItemName)
+    if not ItemName or ItemName == "" then return end
+    if ItemName == "Buy All Event Items" then
+        for _, Name in next, GetEventShopItems() do
+            if Name ~= "Buy All Event Items" then
+                GameEvents.BuyEventShopStock:FireServer(Name, "Safari Shop")
+                wait(0.1)
+            end
         end
     else
-        table.insert(ItemsToBuy, SelectedEventShopItem.Selected)
-    end
-
-    for _, ItemName in next, ItemsToBuy do
-        BuyEventShopStock:FireServer(ItemName, "Safari Shop")
-        wait(0.1)
+        GameEvents.BuyEventShopStock:FireServer(ItemName, "Safari Shop")
     end
 end
 
@@ -461,7 +461,7 @@ local function StartServices()
     MakeLoop(AutoBuy, BuyAllSelectedSeeds)
     MakeLoop(AutoPlant, AutoPlantLoop)
     MakeLoop(AutoSubmitEvent, function() pcall(AutoSubmitEventFruits) end)
-    MakeLoop(AutoBuyEventShop, AutoBuyEventShopItems)
+    MakeLoop(AutoBuyEventShop, function() pcall(function() BuyEventShopItem(SelectedEventShopItem.Selected) end) end)
 end
 
 --// Connections
@@ -602,9 +602,16 @@ coroutine.wrap(function()
     end
 end)()
 
--- Auto-Event 🍇
+-- Auto-Event
+local EventNode = Window:TreeNode({Title="Auto Event 🍇"})
+
+-- Auto Submit Event Fruits
+AutoSubmitEvent = EventNode:Checkbox({Value = false, Label = "Auto Submit Event Fruits"})
+
+-- Auto Buy Event Shop Items
 AutoBuyEventShop = EventNode:Checkbox({Value = false, Label = "Auto Buy Event Shop Items"})
 
+-- Event Shop Item Drop-down
 SelectedEventShopItem = EventNode:Combo({
     Label = "Select Event Item",
     Selected = "Buy All Event Items",
