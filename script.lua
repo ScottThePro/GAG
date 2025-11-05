@@ -27,7 +27,7 @@ local Accent = {
     Brown = Color3.fromRGB(26, 20, 8),
 }
 
---// ReGui configuration (Ui library)
+--// ReGui configuration
 ReGui:Init({Prefabs = InsertService:LoadLocalAsset(PrefabsId)})
 ReGui:DefineTheme("GardenTheme", {
     WindowBg = Accent.Brown,
@@ -387,7 +387,7 @@ local function GetMatchingCrops(Required: table)
         if Required[ItemName] then
             SubmittedCount[ItemName] = SubmittedCount[ItemName] or 0
             if SubmittedCount[ItemName] < Required[ItemName] then
-                table.insert(ToSubmit, Crop)
+                table.insert(ToSubmit, ItemName) -- send name, not object
                 SubmittedCount[ItemName] += 1
             end
         end
@@ -398,22 +398,19 @@ end
 
 local function SubmitEventFruits()
     local SafariEvent = ReplicatedStorage:WaitForChild("GameEvents"):WaitForChild("SafariEvent")
-    local Safari_SubmitItemRE = SafariEvent:WaitForChild("Safari_SubmitItemRE") -- individual submission
+    local Safari_SubmitItemRE = SafariEvent:WaitForChild("Safari_SubmitItemRE")
+
     local Required = GetRequiredFruits()
     if not next(Required) then return end
 
     local CropsToSubmit = GetMatchingCrops(Required)
-    for _, Crop in next, CropsToSubmit do
-        local ItemNameObj = Crop:FindFirstChild("Item_String")
-        if ItemNameObj then
-            pcall(function()
-                Safari_SubmitItemRE:FireServer(ItemNameObj.Value)
-            end)
-            wait(0.1)
-        end
+    for _, FruitName in next, CropsToSubmit do
+        pcall(function()
+            Safari_SubmitItemRE:FireServer(FruitName)
+        end)
+        wait(0.1)
     end
 end
-
 
 --// Start services
 local function StartServices()
@@ -431,10 +428,11 @@ end
 RunService.Stepped:Connect(NoclipLoop)
 Backpack.ChildAdded:Connect(AutoSellCheck)
 
--- Refresh seed dropdown if Seed_Shop GUI appears
 PlayerGui.ChildAdded:Connect(function(Child)
     if Child.Name == "Seed_Shop" then
         if SelectedSeedStock and SelectedSeedStock.GetItems then SelectedSeedStock:GetItems() end
+    elseif Child.Name == "Gear_Shop" then
+        if SelectedGear and SelectedGear.GetItems then SelectedGear:GetItems() end
     end
 end)
 
@@ -561,15 +559,10 @@ coroutine.wrap(function()
         if AutoGear and AutoGear.Value then BuySelectedGear() end
     end
 end)()
-PlayerGui.ChildAdded:Connect(function(Child)
-    if Child.Name == "Gear_Shop" then
-        if SelectedGear and SelectedGear.GetItems then SelectedGear:GetItems() end
-    end
-end)
 
 -- Auto-Event Submission
 local EventNode = Window:TreeNode({Title="Auto-Event 🍇"})
 AutoSubmitEvent = EventNode:Checkbox({Value = false, Label = "Auto Submit Required Fruits"})
 
--- Start everything 2
+-- Start everything
 StartServices()
