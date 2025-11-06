@@ -467,6 +467,7 @@ Backpack.ChildAdded:Connect(AutoSellCheck)
 PlayerGui.ChildAdded:Connect(function(Child)
     if Child.Name == "Seed_Shop" and SelectedSeedStock and SelectedSeedStock.GetItems then SelectedSeedStock:GetItems() end
     if Child.Name == "Gear_Shop" and SelectedGear and SelectedGear.GetItems then SelectedGear:GetItems() end
+    if Child.Name == "Safari_Shop" and SelectedEventShopItem and SelectedEventShopItem.GetItems then SelectedEventShopItem:GetItems() end
 end)
 
 --// Window
@@ -529,5 +530,5 @@ SelectedEventShopItem = EventNode:Combo({
     end
 })
 
--- Start1
+-- Start Services 123
 StartServices()
