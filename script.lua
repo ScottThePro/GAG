@@ -115,14 +115,36 @@ local function BuySeed(Seed: string)
     GameEvents.BuySeedStock:FireServer(Seed)
 end
 
+-- Function to buy seeds
 local function BuyAllSelectedSeeds()
-    local Seed = SelectedSeedStock.Selected
-    local Stock = SeedStock[Seed]
-    if not Stock or Stock <= 0 then return end
-    for i = 1, Stock do
-        BuySeed(Seed)
+    local Selected = SelectedSeedStock.Selected
+    if Selected == "Auto Buy All Seeds" then
+        GetSeedStock()
+        for SeedName, Stock in pairs(SeedStock) do
+            for i = 1, Stock do
+                BuySeed(SeedName)
+                wait(0.05)
+            end
+        end
+    else
+        local Stock = SeedStock[Selected]
+        if not Stock or Stock <= 0 then return end
+        for i = 1, Stock do
+            BuySeed(Selected)
+            wait(0.05)
+        end
     end
 end
+
+BuyNode:Button({Text = "Buy all", Callback = BuyAllSelectedSeeds})
+
+coroutine.wrap(function()
+    while wait(0.5) do
+        if AutoBuy.Value then
+            BuyAllSelectedSeeds()
+        end
+    end
+end)()
 
 local function GetSeedInfo(Seed: Tool): number?
     local PlantName = Seed:FindFirstChild("Plant_Name")
@@ -371,17 +393,32 @@ CreateCheckboxes(HarvestNode, HarvestIgnores)
 --// Auto-Buy Seeds
 local BuyNode = Window:TreeNode({Title="Auto-Buy 🥕"})
 local OnlyShowStock
+
 SelectedSeedStock = BuyNode:Combo({
     Label = "Seed",
     Selected = "",
     GetItems = function()
         local OnlyStock = OnlyShowStock and OnlyShowStock.Value
-        return GetSeedStock(OnlyStock)
+        local StockList = GetSeedStock(OnlyStock)
+
+        -- Create ordered list with Auto Buy All Seeds at top
+        local OrderedList = {"Auto Buy All Seeds"}
+        for SeedName, _ in pairs(StockList) do
+            table.insert(OrderedList, SeedName)
+        end
+        return OrderedList
+    end,
+    Callback = function(_, Selected)
+        if Selected == "Auto Buy All Seeds" then
+            AutoBuy:SetLabel("Auto Buy All Seeds")
+        else
+            AutoBuy:SetLabel("Auto Buy Selected Seed")
+        end
     end
 })
+
 AutoBuy = BuyNode:Checkbox({Value = false, Label = "Enabled"})
 OnlyShowStock = BuyNode:Checkbox({Value = false, Label = "Only list stock"})
-BuyNode:Button({Text = "Buy all", Callback = BuyAllSelectedSeeds})
 
 --// Auto-Sell
 local SellNode = Window:TreeNode({Title="Auto-Sell 💰"})
@@ -495,5 +532,5 @@ end)
 RunService.Stepped:Connect(NoclipLoop)
 Backpack.ChildAdded:Connect(AutoSellCheck)
 
---// Start
+--// Start 1234
 StartServices()
