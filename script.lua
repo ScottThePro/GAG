@@ -47,11 +47,7 @@ ReGui:DefineTheme("GardenTheme", {
 --// Dicts
 local SeedStock = {}
 local OwnedSeeds = {}
-local HarvestIgnores = {
-    Normal = false,
-    Gold = false,
-    Rainbow = false
-}
+local HarvestIgnores = {Normal = false, Gold = false, Rainbow = false}
 
 --// Globals
 local SelectedSeed, AutoPlantRandom, AutoPlant, AutoHarvest, AutoBuy, SellThreshold, NoClip, AutoWalkAllowRandom, AutoWalkMaxWait
@@ -360,9 +356,10 @@ AutoHarvest = HarvestNode:Checkbox({Value = false, Label = "Enabled"})
 HarvestNode:Separator({Text="Ignores:"})
 CreateCheckboxes(HarvestNode, HarvestIgnores)
 
---// Auto-Buy Seeds
+--// Auto-Buy Seeds (PATCHED)
 local BuyNode = Window:TreeNode({Title="Auto-Buy 🥕"})
 local OnlyShowStock
+AutoBuy = BuyNode:Checkbox({Value = false, Label = "Enabled"})
 
 SelectedSeedStock = BuyNode:Combo({
     Label = "Seed",
@@ -378,46 +375,18 @@ SelectedSeedStock = BuyNode:Combo({
         return OrderedList
     end,
     Callback = function(_, Selected)
-        if Selected == "Auto Buy All Seeds" then
-            AutoBuy:SetLabel("Auto Buy All Seeds")
-        else
-            AutoBuy:SetLabel("Auto Buy Selected Seed")
+        if AutoBuy and AutoBuy.SetLabel then
+            if Selected == "Auto Buy All Seeds" then
+                AutoBuy:SetLabel("Auto Buy All Seeds")
+            else
+                AutoBuy:SetLabel("Auto Buy Selected Seed")
+            end
         end
     end
 })
 
-AutoBuy = BuyNode:Checkbox({Value = false, Label = "Enabled"})
 OnlyShowStock = BuyNode:Checkbox({Value = false, Label = "Only list stock"})
-
-local function BuyAllSelectedSeeds()
-    local Selected = SelectedSeedStock.Selected
-    if Selected == "Auto Buy All Seeds" then
-        GetSeedStock()
-        for SeedName, Stock in pairs(SeedStock) do
-            for i = 1, Stock do
-                BuySeed(SeedName)
-                wait(0.05)
-            end
-        end
-    else
-        local Stock = SeedStock[Selected]
-        if not Stock or Stock <= 0 then return end
-        for i = 1, Stock do
-            BuySeed(Selected)
-            wait(0.05)
-        end
-    end
-end
-
 BuyNode:Button({Text = "Buy all", Callback = BuyAllSelectedSeeds})
-
-coroutine.wrap(function()
-    while wait(0.5) do
-        if AutoBuy.Value then
-            BuyAllSelectedSeeds()
-        end
-    end
-end)()
 
 --// Auto-Sell
 local SellNode = Window:TreeNode({Title="Auto-Sell 💰"})
@@ -535,7 +504,7 @@ end
 local function GetEventStock(IgnoreNoStock: boolean?): table
     local EventShop = PlayerGui:FindFirstChild("Event_Shop")
     if not EventShop then return {} end
-    local Items = EventShop:FindFirstChildWhichIsA("Orange Delight") -- adjust according to your shop layout
+    local Items = EventShop:FindFirstChildWhichIsA("Orange Delight")
     if not Items then return {} end
     local NewList = {}
     for _, Item in next, Items:GetChildren() do
