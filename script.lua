@@ -528,9 +528,107 @@ PlayerGui.ChildAdded:Connect(function(Child)
     end
 end)
 
+--// Auto-Buy Event Shop Patch
+local EventNode = Window:TreeNode({Title="Auto-Buy Event 🛒"})
+local EventStock = {}
+local SelectedEventItem
+local AutoEventBuy
+
+-- Auto-buy toggle first
+AutoEventBuy = EventNode:Checkbox({
+    Value = false,
+    Label = "Auto Buy Selected Event Item"
+})
+
+-- Function to buy an event shop item
+local function BuyEventItem(ItemName)
+    if not ItemName or ItemName == "" then return end
+    GameEvents.BuyEventStock:FireServer(ItemName)
+end
+
+-- Function to get event shop stock
+local function GetEventStock(IgnoreNoStock: boolean?): table
+    local EventShop = PlayerGui:FindFirstChild("Event_Shop")
+    if not EventShop then return {} end
+    local Items = EventShop:FindFirstChildWhichIsA("Orange Delight") -- adjust to your shop structure
+    if not Items then return {} end
+    local NewList = {}
+    for _, Item in next, Items:GetChildren() do
+        local MainFrame = Item:FindFirstChild("Main_Frame")
+        if not MainFrame then continue end
+        local StockText = MainFrame.Stock_Text.Text
+        local StockCount = tonumber(StockText:match("%d+")) or 0
+        if IgnoreNoStock and StockCount <= 0 then continue end
+        NewList[Item.Name] = StockCount
+        EventStock[Item.Name] = StockCount
+    end
+    return IgnoreNoStock and NewList or EventStock
+end
+
+-- Function to buy selected event item(s)
+local function BuySelectedEventItem()
+    if SelectedEventItem.Selected == "Auto Buy All Event Items" then
+        GetEventStock()
+        for Name, _ in pairs(EventStock) do
+            BuyEventItem(Name)
+            wait(0.1)
+        end
+    else
+        local Item = SelectedEventItem.Selected
+        if not Item or Item == "" then return end
+        local Stock = EventStock[Item] or 1
+        for i = 1, Stock do
+            BuyEventItem(Item)
+            wait(0.1)
+        end
+    end
+end
+
+-- Dropdown for event shop
+SelectedEventItem = EventNode:Combo({
+    Label = "Select Event Item",
+    Selected = "",
+    GetItems = function()
+        local ItemsList = GetEventStock()
+        local OrderedList = {"Auto Buy All Event Items"}
+        for ItemName, _ in pairs(ItemsList) do
+            table.insert(OrderedList, ItemName)
+        end
+        return OrderedList
+    end,
+    Callback = function(_, Selected)
+        if Selected == "Auto Buy All Event Items" then
+            AutoEventBuy:SetLabel("Auto Buy All Event Items")
+        else
+            AutoEventBuy:SetLabel("Auto Buy Selected Event Item")
+        end
+    end
+})
+
+EventNode:Button({
+    Text = "Buy Selected Event Item",
+    Callback = BuySelectedEventItem
+})
+
+-- Auto-buy loop
+coroutine.wrap(function()
+    while wait(0.5) do
+        if AutoEventBuy.Value then
+            BuySelectedEventItem()
+        end
+    end
+end)()
+
+-- Refresh dropdown if shop GUI opens
+PlayerGui.ChildAdded:Connect(function(Child)
+    if Child.Name == "Event_Shop" then
+        SelectedEventItem:GetItems()
+    end
+end)
+
 --// Connections
 RunService.Stepped:Connect(NoclipLoop)
 Backpack.ChildAdded:Connect(AutoSellCheck)
 
---// Start 1234
+--// Start 12341234
 StartServices()
