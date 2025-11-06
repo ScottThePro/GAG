@@ -502,16 +502,11 @@ local function BuyEventItem(ItemName)
 end
 
 local function GetEventStock(IgnoreNoStock: boolean?): table
-    local EventShop = PlayerGui:FindFirstChild("Event_Shop")
+    local EventShop = PlayerGui.Eveny_Shop
     if not EventShop then return {} end
-
-    -- Replace 'Orange Delight' with any known child of EventShop
-    local SampleItem = EventShop:FindFirstChild("Protea", true)
-    if not SampleItem then return {} end
-
-    local ItemsParent = SampleItem.Parent
+    local Items = EventShop:FindFirstChild("Protea", true).Parent
     local NewList = {}
-    for _, Item in next, ItemsParent:GetChildren() do
+    for _, Item in next, Items:GetChildren() do
         local MainFrame = Item:FindFirstChild("Main_Frame")
         if not MainFrame then continue end
         local StockText = MainFrame.Stock_Text.Text
@@ -581,5 +576,5 @@ end)
 RunService.Stepped:Connect(NoclipLoop)
 Backpack.ChildAdded:Connect(AutoSellCheck)
 
---// Start 1
+--// Start 12
 StartServices()
