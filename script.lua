@@ -420,18 +420,39 @@ local function AutoSubmitEventFruits()
     fireproximityprompt(Prompt)
 end
 
--- Auto Buy Event Shop
+--// Auto Buy Event Shop (Patched)
+local BuyEventShopStock = GameEvents:WaitForChild("BuyEventShopStock")
+local EventShopItems = {"Buy All Event Items"}
+
+-- Hook remote to populate items dynamically
+local function HookEventShopRemote()
+    if BuyEventShopStock.__Hooked then return end
+    BuyEventShopStock.__Hooked = true
+
+    local oldFireServer = BuyEventShopStock.FireServer
+    BuyEventShopStock.FireServer = newcclosure(function(self, ItemName, ShopName, ...)
+        if ItemName and not table.find(EventShopItems, ItemName) then
+            table.insert(EventShopItems, ItemName)
+            table.sort(EventShopItems, function(a,b)
+                if a == "Buy All Event Items" then return true end
+                if b == "Buy All Event Items" then return false end
+                return a < b
+            end)
+        end
+        return oldFireServer(self, ItemName, ShopName, ...)
+    end)
+end
+HookEventShopRemote()
+
 local function BuyEventShopItem(ItemName)
     if not ItemName or ItemName == "" then return end
-    GameEvents.BuyEventShopStock:FireServer(ItemName, "Safari Shop")
+    BuyEventShopStock:FireServer(ItemName, "Safari Shop")
 end
 
 local function BuyAllEventShopItems()
-    local Shop = PlayerGui:FindFirstChild("Safari_Shop")
-    if not Shop then return end
-    for _, Item in next, Shop:GetChildren() do
-        if Item:IsA("Frame") and Item.Name ~= "" then
-            BuyEventShopItem(Item.Name)
+    for _, ItemName in next, EventShopItems do
+        if ItemName ~= "Buy All Event Items" then
+            BuyEventShopItem(ItemName)
             wait(0.1)
         end
     end
@@ -447,41 +468,6 @@ local function AutoBuyEventLoop()
         BuyEventShopItem(ItemName)
     end
 end
-
--- Refresh Event Shop Dropdown dynamically
-local function GetEventShopItems()
-    local Shop = PlayerGui:FindFirstChild("Safari_Shop")
-    local Items = {}
-    if Shop then
-        for _, Item in next, Shop:GetChildren() do
-            if Item:IsA("Frame") and Item.Name ~= "" then
-                table.insert(Items, Item.Name)
-            end
-        end
-    end
-    table.sort(Items)
-    table.insert(Items, 1, "Buy All Event Items")
-    return Items
-end
-
-local function RefreshEventShopDropdown()
-    if SelectedEventShopItem and SelectedEventShopItem.GetItems then
-        SelectedEventShopItem:GetItems()
-    end
-end
-
-PlayerGui.ChildAdded:Connect(function(Child)
-    if Child.Name == "Safari_Shop" then
-        RefreshEventShopDropdown()
-    end
-end)
-
-coroutine.wrap(function()
-    while wait(5) do
-        local Shop = PlayerGui:FindFirstChild("Safari_Shop")
-        if Shop then RefreshEventShopDropdown() end
-    end
-end)()
 
 --// Start services
 local function StartServices()
@@ -548,8 +534,10 @@ AutoBuyEventShop = EventNode:Checkbox({Value=false, Label="Auto Buy Event Shop I
 SelectedEventShopItem = EventNode:Combo({
     Label = "Select Event Item",
     Selected = "Buy All Event Items",
-    GetItems = GetEventShopItems
+    GetItems = function()
+        return EventShopItems
+    end
 })
 
--- Start services
+-- Start all loops 1
 StartServices()
