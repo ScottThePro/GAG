@@ -512,7 +512,7 @@ local function GetSafariItemsContainer()
     local shop = GetSafariShop()
     if not shop then return nil end
     for _, obj in ipairs(shop:GetDescendants()) do
-        if obj:IsA("Frame") and obj:FindFirstChild("Main_Frame") then
+        if obj:IsA("Orange Delight") and obj:FindFirstChild("Main_Frame") then
             return obj.Parent
         end
     end
@@ -525,7 +525,7 @@ local function GetSafariStock()
     if not container then return {} end
     local stock = {}
     for _, item in ipairs(container:GetChildren()) do
-        if item:IsA("Frame") and item:FindFirstChild("Main_Frame") then
+        if item:IsA("Orange Delight") and item:FindFirstChild("Main_Frame") then
             stock[item.Name] = 1
         end
     end
@@ -595,5 +595,5 @@ end)
 RunService.Stepped:Connect(NoclipLoop)
 Backpack.ChildAdded:Connect(AutoSellCheck)
 
---// Start 2
+--// Start 21
 StartServices()
