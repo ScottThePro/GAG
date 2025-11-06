@@ -448,6 +448,41 @@ local function AutoBuyEventLoop()
     end
 end
 
+-- Refresh Event Shop Dropdown dynamically
+local function GetEventShopItems()
+    local Shop = PlayerGui:FindFirstChild("Safari_Shop")
+    local Items = {}
+    if Shop then
+        for _, Item in next, Shop:GetChildren() do
+            if Item:IsA("Frame") and Item.Name ~= "" then
+                table.insert(Items, Item.Name)
+            end
+        end
+    end
+    table.sort(Items)
+    table.insert(Items, 1, "Buy All Event Items")
+    return Items
+end
+
+local function RefreshEventShopDropdown()
+    if SelectedEventShopItem and SelectedEventShopItem.GetItems then
+        SelectedEventShopItem:GetItems()
+    end
+end
+
+PlayerGui.ChildAdded:Connect(function(Child)
+    if Child.Name == "Safari_Shop" then
+        RefreshEventShopDropdown()
+    end
+end)
+
+coroutine.wrap(function()
+    while wait(5) do
+        local Shop = PlayerGui:FindFirstChild("Safari_Shop")
+        if Shop then RefreshEventShopDropdown() end
+    end
+end)()
+
 --// Start services
 local function StartServices()
     MakeLoop(AutoWalk, function()
@@ -467,7 +502,6 @@ Backpack.ChildAdded:Connect(AutoSellCheck)
 PlayerGui.ChildAdded:Connect(function(Child)
     if Child.Name == "Seed_Shop" and SelectedSeedStock and SelectedSeedStock.GetItems then SelectedSeedStock:GetItems() end
     if Child.Name == "Gear_Shop" and SelectedGear and SelectedGear.GetItems then SelectedGear:GetItems() end
-    if Child.Name == "Safari_Shop" and SelectedEventShopItem and SelectedEventShopItem.GetItems then SelectedEventShopItem:GetItems() end
 end)
 
 --// Window
@@ -514,21 +548,8 @@ AutoBuyEventShop = EventNode:Checkbox({Value=false, Label="Auto Buy Event Shop I
 SelectedEventShopItem = EventNode:Combo({
     Label = "Select Event Item",
     Selected = "Buy All Event Items",
-    GetItems = function()
-        local Shop = PlayerGui:FindFirstChild("Safari_Shop")
-        local Items = {}
-        if Shop then
-            for _, Item in next, Shop:GetChildren() do
-                if Item:IsA("Frame") and Item.Name ~= "" then
-                    table.insert(Items, Item.Name)
-                end
-            end
-        end
-        table.sort(Items)
-        table.insert(Items, 1, "Buy All Event Items")
-        return Items
-    end
+    GetItems = GetEventShopItems
 })
 
--- Start Services 123
+-- Start services
 StartServices()
