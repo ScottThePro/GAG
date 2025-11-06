@@ -502,7 +502,7 @@ local function BuyEventItem(ItemName)
 end
 
 local function GetEventStock(IgnoreNoStock: boolean?): table
-    local EventShop = PlayerGui.Eveny_Shop
+    local EventShop = PlayerGui.Safari_Shop
     if not EventShop then return {} end
     local Items = EventShop:FindFirstChild("Protea", true).Parent
     local NewList = {}
@@ -567,7 +567,7 @@ coroutine.wrap(function()
 end)()
 
 PlayerGui.ChildAdded:Connect(function(Child)
-    if Child.Name == "Event_Shop" then
+    if Child.Name == "Safari_Shop" then
         SelectedEventItem:GetItems()
     end
 end)
@@ -576,5 +576,5 @@ end)
 RunService.Stepped:Connect(NoclipLoop)
 Backpack.ChildAdded:Connect(AutoSellCheck)
 
---// Start 12
+--// Start 123
 StartServices()
