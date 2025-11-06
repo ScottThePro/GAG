@@ -506,7 +506,7 @@ local function GetEventStock(IgnoreNoStock: boolean?): table
     if not EventShop then return {} end
 
     -- Replace 'Orange Delight' with any known child of EventShop
-    local SampleItem = EventShop:FindFirstChild("Orange Delight", true)
+    local SampleItem = EventShop:FindFirstChild("Protea", true)
     if not SampleItem then return {} end
 
     local ItemsParent = SampleItem.Parent
@@ -581,5 +581,5 @@ end)
 RunService.Stepped:Connect(NoclipLoop)
 Backpack.ChildAdded:Connect(AutoSellCheck)
 
---// Start 123
+--// Start 1
 StartServices()
