@@ -502,11 +502,16 @@ local function BuyEventItem(ItemName)
 end
 
 local function GetEventStock(IgnoreNoStock: boolean?): table
-    local EventShop = PlayerGui.Safari_Shop
+    local EventShop = PlayerGui:FindFirstChild("Safari_Shop")
     if not EventShop then return {} end
-    local Items = EventShop:FindFirstChild("Protea", true).Parent
+
+    -- Replace 'Orange Delight' with any known child of EventShop
+    local SampleItem = EventShop:FindFirstChild("Orange Delight", true)
+    if not SampleItem then return {} end
+
+    local ItemsParent = SampleItem.Parent
     local NewList = {}
-    for _, Item in next, Items:GetChildren() do
+    for _, Item in next, ItemsParent:GetChildren() do
         local MainFrame = Item:FindFirstChild("Main_Frame")
         if not MainFrame then continue end
         local StockText = MainFrame.Stock_Text.Text
@@ -517,6 +522,7 @@ local function GetEventStock(IgnoreNoStock: boolean?): table
     end
     return IgnoreNoStock and NewList or EventStock
 end
+
 
 local function BuySelectedEventItem()
     if SelectedEventItem.Selected == "All Event Items" then
@@ -576,5 +582,5 @@ end)
 RunService.Stepped:Connect(NoclipLoop)
 Backpack.ChildAdded:Connect(AutoSellCheck)
 
---// Start 123
+--// Start
 StartServices()
