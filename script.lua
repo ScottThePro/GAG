@@ -435,7 +435,7 @@ local function GetGearStock(IgnoreNoStock: boolean?): table
 end
 
 local function BuySelectedGear()
-    if SelectedGear.Selected == "Auto Buy All Gear" then
+    if SelectedGear.Selected == "All Gear" then
         GetGearStock()
         for Name, _ in pairs(GearStock) do
             BuyGear(Name)
@@ -457,14 +457,14 @@ SelectedGear = GearNode:Combo({
     Selected = "",
     GetItems = function()
         local ItemsList = GetGearStock()
-        local OrderedList = {"Auto Buy All Gear"}
+        local OrderedList = {"All Gear"}
         for GearName, _ in pairs(ItemsList) do
             table.insert(OrderedList, GearName)
         end
         return OrderedList
     end,
     Callback = function(_, Selected)
-        if Selected == "Auto Buy All Gear" then
+        if Selected == "All Gear" then
             AutoGear:SetLabel("Auto Buy All Gear")
         else
             AutoGear:SetLabel("Auto Buy Selected Gear")
@@ -504,10 +504,14 @@ end
 local function GetEventStock(IgnoreNoStock: boolean?): table
     local EventShop = PlayerGui:FindFirstChild("Event_Shop")
     if not EventShop then return {} end
-    local Items = EventShop:FindFirstChildWhichIsA("Orange Delight")
-    if not Items then return {} end
+
+    -- Replace 'Orange Delight' with any known child of EventShop
+    local SampleItem = EventShop:FindFirstChild("Orange Delight", true)
+    if not SampleItem then return {} end
+
+    local ItemsParent = SampleItem.Parent
     local NewList = {}
-    for _, Item in next, Items:GetChildren() do
+    for _, Item in next, ItemsParent:GetChildren() do
         local MainFrame = Item:FindFirstChild("Main_Frame")
         if not MainFrame then continue end
         local StockText = MainFrame.Stock_Text.Text
@@ -520,7 +524,7 @@ local function GetEventStock(IgnoreNoStock: boolean?): table
 end
 
 local function BuySelectedEventItem()
-    if SelectedEventItem.Selected == "Auto Buy All Event Items" then
+    if SelectedEventItem.Selected == "All Event Items" then
         GetEventStock()
         for Name, _ in pairs(EventStock) do
             BuyEventItem(Name)
@@ -542,14 +546,14 @@ SelectedEventItem = EventNode:Combo({
     Selected = "",
     GetItems = function()
         local ItemsList = GetEventStock()
-        local OrderedList = {"Auto Buy All Event Items"}
+        local OrderedList = {"All Event Items"}
         for ItemName, _ in pairs(ItemsList) do
             table.insert(OrderedList, ItemName)
         end
         return OrderedList
     end,
     Callback = function(_, Selected)
-        if Selected == "Auto Buy All Event Items" then
+        if Selected == "All Event Items" then
             AutoEventBuy:SetLabel("Auto Buy All Event Items")
         else
             AutoEventBuy:SetLabel("Auto Buy Selected Event Item")
@@ -577,5 +581,5 @@ end)
 RunService.Stepped:Connect(NoclipLoop)
 Backpack.ChildAdded:Connect(AutoSellCheck)
 
---// Start
+--// Start 123
 StartServices()
