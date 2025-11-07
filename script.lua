@@ -488,7 +488,7 @@ PlayerGui.ChildAdded:Connect(function(Child)
     end
 end)
 
---// Auto-Buy Safari Shop 🛒 (Deep Detection + Debug)
+--// Auto-Buy Safari Shop 🛒 (Deep Detection + Debug) -- PATCHED
 local EventNode = Window:TreeNode({Title="Auto-Buy Safari Shop 🛒"})
 local SafariStock = {}
 local SelectedSafariItem
@@ -523,7 +523,7 @@ local function GetSafariStock()
         if obj:IsA("Frame") and obj:FindFirstChild("Main_Frame") then
             local itemName = obj.Name
             stock[itemName] = 1
-            found += 1
+            found = found + 1
             print("[SafariShop] Found item:", itemName)
         elseif obj:IsA("TextLabel") and obj.Name == "ItemName" then
             -- Sometimes item names are stored in TextLabels instead of frame names
@@ -531,7 +531,7 @@ local function GetSafariStock()
             if parent and parent:FindFirstChild("Main_Frame") then
                 local itemName = obj.Text
                 stock[itemName] = 1
-                found += 1
+                found = found + 1
                 print("[SafariShop] Found item via TextLabel:", itemName)
             end
         end
@@ -554,12 +554,12 @@ end
 
 -- Buy selected or all
 local function BuySelectedSafariItem()
-    if SelectedSafariItem.Selected == "Auto Buy All Safari Items" then
+    if SelectedSafariItem and SelectedSafariItem.Selected == "Auto Buy All Safari Items" then
         for Name, _ in pairs(SafariStock) do
             BuySafariItem(Name)
             task.wait(0.15)
         end
-    else
+    elseif SelectedSafariItem then
         BuySafariItem(SelectedSafariItem.Selected)
     end
 end
@@ -577,10 +577,12 @@ SelectedSafariItem = EventNode:Combo({
         return OrderedList
     end,
     Callback = function(_, Selected)
-        if Selected == "Auto Buy All Safari Items" then
-            AutoSafariBuy:SetLabel("Auto Buy All Safari Items")
-        else
-            AutoSafariBuy:SetLabel("Auto Buy Selected Safari Item")
+        if AutoSafariBuy and AutoSafariBuy.SetLabel then
+            if Selected == "Auto Buy All Safari Items" then
+                AutoSafariBuy:SetLabel("Auto Buy All Safari Items")
+            else
+                AutoSafariBuy:SetLabel("Auto Buy Selected Safari Item")
+            end
         end
     end
 })
@@ -588,23 +590,25 @@ SelectedSafariItem = EventNode:Combo({
 -- Manual buy button
 EventNode:Button({Text = "Buy Selected Safari Item", Callback = BuySelectedSafariItem})
 
--- Auto-buy loop
-task.spawn(function()
-    while task.wait(0.5) do
-        if AutoSafariBuy.Value then
+-- Auto-buy loop (uses coroutine.wrap for compatibility)
+coroutine.wrap(function()
+    while wait(0.5) do
+        if AutoSafariBuy and AutoSafariBuy.Value then
             BuySelectedSafariItem()
         end
     end
-end)
+end)()
 
 -- Refresh dropdown whenever Safari shop UI appears
 game.Players.LocalPlayer.PlayerGui.ChildAdded:Connect(function(Child)
-    if Child.Name == "SafariIndividualRewards_UI" then
- 
-
+    if Child and Child.Name == "SafariIndividualRewards_UI" then
+        print("[SafariShop] Safari shop opened — refreshing dropdown")
+        SelectedSafariItem:GetItems()
+    end
+end)
 --// Connections
 RunService.Stepped:Connect(NoclipLoop)
 Backpack.ChildAdded:Connect(AutoSellCheck)
 
---// Start 21
+--// Start 
 StartServices()
