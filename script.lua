@@ -27,7 +27,7 @@ local Accent = {
     Brown = Color3.fromRGB(26, 20, 8),
 }
 
---// ReGui configuration
+--// ReGui configuration (Ui library)
 ReGui:Init({
     Prefabs = InsertService:LoadLocalAsset(PrefabsId)
 })
@@ -65,7 +65,7 @@ end
 --// Game Functions
 local function Plant(Position: Vector3, Seed: string)
     GameEvents.Plant_RE:FireServer(Position, Seed)
-    task.wait(0.3)
+    wait(.3)
 end
 
 local function GetFarms()
@@ -91,7 +91,6 @@ end
 local IsSelling = false
 local function SellInventory()
     local Character = LocalPlayer.Character
-    if not Character then return end
     local Previous = Character:GetPivot()
     local PreviousSheckles = ShecklesCount.Value
 
@@ -99,36 +98,20 @@ local function SellInventory()
     IsSelling = true
 
     Character:PivotTo(CFrame.new(62, 4, -26))
-    while task.wait() do
+    while wait() do
         if ShecklesCount.Value ~= PreviousSheckles then break end
         GameEvents.Sell_Inventory:FireServer()
     end
     Character:PivotTo(Previous)
-    task.wait(0.2)
+    wait(0.2)
     IsSelling = false
 end
 
 local function BuySeed(Seed: string)
     GameEvents.BuySeedStock:FireServer(Seed)
 end
-local function BuyAllSelectedSeeds()
-    if SelectedSeedStock.Selected == "Auto Buy All Seeds" then
-        local StockList = GetSeedStock()
-        for SeedName, _ in pairs(StockList) do
-            BuySeed(SeedName)
-            wait(0.1)
-        end
-    else
-        local Seed = SelectedSeedStock.Selected
-        if not Seed or Seed == "" then return end
-        local Stock = SeedStock[Seed] or 1
-        for i = 1, Stock do
-            BuySeed(Seed)
-            wait(0.1)
-        end
-    end
-end
-local function GetSeedInfo(Seed: Tool)
+
+local function GetSeedInfo(Seed: Tool): number?
     local PlantName = Seed:FindFirstChild("Plant_Name")
     local Count = Seed:FindFirstChild("Numbers")
     if not PlantName then return end
@@ -227,7 +210,30 @@ local function AutoPlantLoop()
     end
 end
 
-local function CanHarvest(Plant)
+local function HarvestPlant(Plant: Model)
+    local Prompt = Plant:FindFirstChild("ProximityPrompt", true)
+    if not Prompt then return end
+    fireproximityprompt(Prompt)
+end
+
+local function GetSeedStock(IgnoreNoStock: boolean?): table
+    local SeedShop = PlayerGui.Seed_Shop
+    if not SeedShop then return {} end
+    local Items = SeedShop:FindFirstChild("Blueberry", true).Parent
+    local NewList = {}
+    for _, Item in next, Items:GetChildren() do
+        local MainFrame = Item:FindFirstChild("Main_Frame")
+        if not MainFrame then continue end
+        local StockText = MainFrame.Stock_Text.Text
+        local StockCount = tonumber(StockText:match("%d+")) or 0
+        if IgnoreNoStock and StockCount <= 0 then continue end
+        NewList[Item.Name] = StockCount
+        SeedStock[Item.Name] = StockCount
+    end
+    return IgnoreNoStock and NewList or SeedStock
+end
+
+local function CanHarvest(Plant): boolean?
     local Prompt = Plant:FindFirstChild("ProximityPrompt", true)
     if not Prompt then return end
     if not Prompt.Enabled then return end
@@ -258,13 +264,7 @@ local function GetHarvestablePlants(IgnoreDistance: boolean?)
     return Plants
 end
 
-local function HarvestPlant(Plant: Model)
-    local Prompt = Plant:FindFirstChild("ProximityPrompt", true)
-    if not Prompt then return end
-    fireproximityprompt(Prompt)
-end
-
-local function HarvestPlants()
+local function HarvestPlants(Parent: Model)
     for _, Plant in next, GetHarvestablePlants() do
         HarvestPlant(Plant)
     end
@@ -311,7 +311,7 @@ end
 
 local function MakeLoop(Toggle, Func)
     coroutine.wrap(function()
-        while task.wait(.01) do
+        while wait(.01) do
             if not Toggle.Value then continue end
             Func()
         end
@@ -321,14 +321,14 @@ end
 local function StartServices()
     MakeLoop(AutoWalk, function()
         AutoWalkLoop()
-        task.wait(math.random(1, AutoWalkMaxWait.Value))
+        wait(math.random(1, AutoWalkMaxWait.Value))
     end)
-    MakeLoop(AutoHarvest, HarvestPlants)
+    MakeLoop(AutoHarvest, function() HarvestPlants(PlantsPhysical) end)
     MakeLoop(AutoBuy, BuyAllSelectedSeeds)
     MakeLoop(AutoPlant, AutoPlantLoop)
 end
 
-local function CreateCheckboxes(Parent, Dict)
+local function CreateCheckboxes(Parent, Dict: table)
     for Key, Value in next, Dict do
         Parent:Checkbox({
             Value = Value,
@@ -340,22 +340,23 @@ local function CreateCheckboxes(Parent, Dict)
     end
 end
 
---// GUI Window
+--// Window
 local Window = CreateWindow()
---// Auto-Plant GUI
+
+--// Auto-Plant
 local PlantNode = Window:TreeNode({Title="Auto-Plant 🥕"})
 SelectedSeed = PlantNode:Combo({Label = "Seed", Selected = "", GetItems = GetSeedStock})
 AutoPlant = PlantNode:Checkbox({Value = false, Label = "Enabled"})
 AutoPlantRandom = PlantNode:Checkbox({Value = false, Label = "Plant at random points"})
 PlantNode:Button({Text = "Plant all", Callback = AutoPlantLoop})
 
---// Auto-Harvest GUI
+--// Auto-Harvest
 local HarvestNode = Window:TreeNode({Title="Auto-Harvest 🚜"})
 AutoHarvest = HarvestNode:Checkbox({Value = false, Label = "Enabled"})
 HarvestNode:Separator({Text="Ignores:"})
 CreateCheckboxes(HarvestNode, HarvestIgnores)
 
---// Auto-Buy Seeds GUI
+--// Auto-Buy Seeds (PATCHED)
 local BuyNode = Window:TreeNode({Title="Auto-Buy 🥕"})
 local OnlyShowStock
 AutoBuy = BuyNode:Checkbox({Value = false, Label = "Enabled"})
@@ -366,6 +367,7 @@ SelectedSeedStock = BuyNode:Combo({
     GetItems = function()
         local OnlyStock = OnlyShowStock and OnlyShowStock.Value
         local StockList = GetSeedStock(OnlyStock)
+
         local OrderedList = {"Auto Buy All Seeds"}
         for SeedName, _ in pairs(StockList) do
             table.insert(OrderedList, SeedName)
@@ -386,21 +388,21 @@ SelectedSeedStock = BuyNode:Combo({
 OnlyShowStock = BuyNode:Checkbox({Value = false, Label = "Only list stock"})
 BuyNode:Button({Text = "Buy all", Callback = BuyAllSelectedSeeds})
 
---// Auto-Sell GUI
+--// Auto-Sell
 local SellNode = Window:TreeNode({Title="Auto-Sell 💰"})
 SellNode:Button({Text = "Sell inventory", Callback = SellInventory})
 AutoSell = SellNode:Checkbox({Value = false, Label = "Enabled"})
 SellThreshold = SellNode:SliderInt({Label = "Crops threshold", Value = 15, Minimum = 1, Maximum = 199})
 
---// Auto-Walk GUI
-local WalkNode = Window:TreeNode({Title="Auto-Walk 🚶"})
-AutoWalkStatus = WalkNode:Label({Text = "None"})
-AutoWalk = WalkNode:Checkbox({Value = false, Label = "Enabled"})
-AutoWalkAllowRandom = WalkNode:Checkbox({Value = true, Label = "Allow random points"})
-NoClip = WalkNode:Checkbox({Value = false, Label = "NoClip"})
-AutoWalkMaxWait = WalkNode:SliderInt({Label = "Max delay", Value = 10, Minimum = 1, Maximum = 120})
+--// Auto-Walk
+local WallNode = Window:TreeNode({Title="Auto-Walk 🚶"})
+AutoWalkStatus = WallNode:Label({Text = "None"})
+AutoWalk = WallNode:Checkbox({Value = false, Label = "Enabled"})
+AutoWalkAllowRandom = WallNode:Checkbox({Value = true, Label = "Allow random points"})
+NoClip = WallNode:Checkbox({Value = false, Label = "NoClip"})
+AutoWalkMaxWait = WallNode:SliderInt({Label = "Max delay", Value = 10, Minimum = 1, Maximum = 120})
 
---// Auto-Gear GUI
+--// Auto-Gear 🧤 (Fully Fixed)
 local GearNode = Window:TreeNode({Title="Auto-Gear 🧤"})
 local GearStock = {}
 local SelectedGear
@@ -413,7 +415,7 @@ local function BuyGear(GearName)
     GameEvents.BuyGearStock:FireServer(GearName)
 end
 
-local function GetGearStock(IgnoreNoStock: boolean?)
+local function GetGearStock(IgnoreNoStock: boolean?): table
     local GearShop = PlayerGui:FindFirstChild("Gear_Shop")
     if not GearShop then return {} end
     local Items = GearShop:FindFirstChild("Trowel", true)
@@ -437,7 +439,7 @@ local function BuySelectedGear()
         GetGearStock()
         for Name, _ in pairs(GearStock) do
             BuyGear(Name)
-            task.wait(0.1)
+            wait(0.1)
         end
     else
         local Gear = SelectedGear.Selected
@@ -445,7 +447,7 @@ local function BuySelectedGear()
         local Stock = GearStock[Gear] or 1
         for i = 1, Stock do
             BuyGear(Gear)
-            task.wait(0.1)
+            wait(0.1)
         end
     end
 end
@@ -473,7 +475,7 @@ SelectedGear = GearNode:Combo({
 GearNode:Button({Text = "Buy Selected Gear", Callback = BuySelectedGear})
 
 coroutine.wrap(function()
-    while task.wait(0.5) do
+    while wait(0.5) do
         if AutoGear.Value then
             BuySelectedGear()
         end
@@ -486,43 +488,50 @@ PlayerGui.ChildAdded:Connect(function(Child)
     end
 end)
 
---// Auto-Buy Event Shop GUI
-local EventNode = Window:TreeNode({Title="Auto-Buy Event 🛒"})
+--// Auto-Buy Safari Event 🦁
+local EventNode = Window:TreeNode({Title="Auto-Buy Safari Event 🦁"})
 local EventStock = {}
 local SelectedEventItem
 local AutoEventBuy
 
-AutoEventBuy = EventNode:Checkbox({Value = false, Label = "Auto Buy Selected Event Item"})
+AutoEventBuy = EventNode:Checkbox({Value = false, Label = "Auto Buy Selected Safari Item"})
 
 local function BuyEventItem(ItemName)
     if not ItemName or ItemName == "" then return end
     GameEvents.BuyEventStock:FireServer(ItemName)
 end
 
-local function GetEventStock(IgnoreNoStock: boolean?)
-    local EventShop = PlayerGui:FindFirstChild("Event_Shop")
+-- Get Safari Event Stock
+local function GetEventStock(IgnoreNoStock: boolean?): table
+    local EventShop = PlayerGui:FindFirstChild("EventShop_UI")
     if not EventShop then return {} end
-    local Items = EventShop:FindFirstChildWhichIsA("Frame")
-    if not Items then return {} end
+
+    local ItemsContainer = EventShop:FindFirstChild("Items_Frame") or EventShop:FindFirstChildWhichIsA("Frame")
+    if not ItemsContainer then return {} end
+
     local NewList = {}
-    for _, Item in next, Items:GetChildren() do
+    for _, Item in next, ItemsContainer:GetChildren() do
         local MainFrame = Item:FindFirstChild("Main_Frame")
         if not MainFrame then continue end
-        local StockText = MainFrame.Stock_Text.Text
-        local StockCount = tonumber(StockText:match("%d+")) or 0
+
+        local StockText = MainFrame:FindFirstChild("Stock_Text") and MainFrame.Stock_Text.Text or "1"
+        local StockCount = tonumber(StockText:match("%d+")) or 1
+
         if IgnoreNoStock and StockCount <= 0 then continue end
+
         NewList[Item.Name] = StockCount
         EventStock[Item.Name] = StockCount
     end
     return IgnoreNoStock and NewList or EventStock
 end
 
+-- Buy Selected or All Items
 local function BuySelectedEventItem()
-    if SelectedEventItem.Selected == "Auto Buy All Event Items" then
+    if SelectedEventItem.Selected == "Auto Buy All Safari Items" then
         GetEventStock()
         for Name, _ in pairs(EventStock) do
             BuyEventItem(Name)
-            task.wait(0.1)
+            wait(0.1)
         end
     else
         local Item = SelectedEventItem.Selected
@@ -530,43 +539,46 @@ local function BuySelectedEventItem()
         local Stock = EventStock[Item] or 1
         for i = 1, Stock do
             BuyEventItem(Item)
-            task.wait(0.1)
+            wait(0.1)
         end
     end
 end
 
+-- Drop-down for Safari Items
 SelectedEventItem = EventNode:Combo({
-    Label = "Select Event Item",
+    Label = "Select Safari Item",
     Selected = "",
     GetItems = function()
         local ItemsList = GetEventStock()
-        local OrderedList = {"Auto Buy All Event Items"}
+        local OrderedList = {"Auto Buy All Safari Items"}
         for ItemName, _ in pairs(ItemsList) do
             table.insert(OrderedList, ItemName)
         end
         return OrderedList
     end,
     Callback = function(_, Selected)
-        if Selected == "Auto Buy All Event Items" then
-            AutoEventBuy:SetLabel("Auto Buy All Event Items")
+        if Selected == "Auto Buy All Safari Items" then
+            AutoEventBuy:SetLabel("Auto Buy All Safari Items")
         else
-            AutoEventBuy:SetLabel("Auto Buy Selected Event Item")
+            AutoEventBuy:SetLabel("Auto Buy Selected Safari Item")
         end
     end
 })
 
-EventNode:Button({Text = "Buy Selected Event Item", Callback = BuySelectedEventItem})
+EventNode:Button({Text = "Buy Selected Safari Item", Callback = BuySelectedEventItem})
 
+-- Auto-buy coroutine
 coroutine.wrap(function()
-    while task.wait(0.5) do
+    while wait(0.5) do
         if AutoEventBuy.Value then
             BuySelectedEventItem()
         end
     end
 end)()
 
+-- Refresh drop-down when Safari shop GUI is added
 PlayerGui.ChildAdded:Connect(function(Child)
-    if Child.Name == "Event_Shop" then
+    if Child.Name == "EventShop_UI" then
         SelectedEventItem:GetItems()
     end
 end)
@@ -575,5 +587,5 @@ end)
 RunService.Stepped:Connect(NoclipLoop)
 Backpack.ChildAdded:Connect(AutoSellCheck)
 
---// Start loops 11
+--// Start
 StartServices()
