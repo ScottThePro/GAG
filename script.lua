@@ -488,7 +488,7 @@ PlayerGui.ChildAdded:Connect(function(Child)
     end
 end)
 
---// Auto-Buy Safari Shop 🛒 (Patched)
+--// Auto-Buy Safari Shop 🛒 (Deep Detection + Debug)
 local EventNode = Window:TreeNode({Title="Auto-Buy Safari Shop 🛒"})
 local SafariStock = {}
 local SelectedSafariItem
@@ -498,7 +498,7 @@ AutoSafariBuy = EventNode:Checkbox({Value = false, Label = "Auto Buy Selected Sa
 
 -- Detect Safari Shop dynamically
 local function GetSafariShop()
-    local PlayerGui = game.Players.LocalPlayer.PlayerGui
+    local PlayerGui = game.Players.LocalPlayer:WaitForChild("PlayerGui")
     for _, gui in ipairs(PlayerGui:GetChildren()) do
         if gui:IsA("ScreenGui") and gui.Name == "SafariIndividualRewards_UI" then
             return gui
@@ -507,28 +507,40 @@ local function GetSafariShop()
     return nil
 end
 
--- Find the container holding items
-local function GetSafariItemsContainer()
-    local shop = GetSafariShop()
-    if not shop then return nil end
-    for _, obj in ipairs(shop:GetDescendants()) do
-        if obj:IsA("Orange Delight") and obj:FindFirstChild("Main_Frame") then
-            return obj.Parent
-        end
-    end
-    return nil
-end
-
--- Populate dropdown
+-- Deep scan for any item frames that can be bought
 local function GetSafariStock()
-    local container = GetSafariItemsContainer()
-    if not container then return {} end
+    local shop = GetSafariShop()
+    if not shop then
+        warn("[SafariShop] SafariIndividualRewards_UI not found in PlayerGui")
+        return {}
+    end
+
     local stock = {}
-    for _, item in ipairs(container:GetChildren()) do
-        if item:IsA("Orange Delight") and item:FindFirstChild("Main_Frame") then
-            stock[item.Name] = 1
+    local found = 0
+
+    -- Search all descendants for Frames that look like item containers
+    for _, obj in ipairs(shop:GetDescendants()) do
+        if obj:IsA("Frame") and obj:FindFirstChild("Main_Frame") then
+            local itemName = obj.Name
+            stock[itemName] = 1
+            found += 1
+            print("[SafariShop] Found item:", itemName)
+        elseif obj:IsA("TextLabel") and obj.Name == "ItemName" then
+            -- Sometimes item names are stored in TextLabels instead of frame names
+            local parent = obj:FindFirstAncestorWhichIsA("Frame")
+            if parent and parent:FindFirstChild("Main_Frame") then
+                local itemName = obj.Text
+                stock[itemName] = 1
+                found += 1
+                print("[SafariShop] Found item via TextLabel:", itemName)
+            end
         end
     end
+
+    if found == 0 then
+        warn("[SafariShop] No items detected in SafariIndividualRewards_UI — check hierarchy or open shop UI first.")
+    end
+
     SafariStock = stock
     return stock
 end
@@ -537,6 +549,7 @@ end
 local function BuySafariItem(ItemName)
     if not ItemName or ItemName == "" then return end
     game:GetService("ReplicatedStorage").GameEvents.BuyEventShopStock:FireServer(ItemName, "Safari Shop")
+    print("[SafariShop] Attempted purchase:", ItemName)
 end
 
 -- Buy selected or all
@@ -544,7 +557,7 @@ local function BuySelectedSafariItem()
     if SelectedSafariItem.Selected == "Auto Buy All Safari Items" then
         for Name, _ in pairs(SafariStock) do
             BuySafariItem(Name)
-            wait(0.1)
+            task.wait(0.15)
         end
     else
         BuySafariItem(SelectedSafariItem.Selected)
@@ -572,24 +585,22 @@ SelectedSafariItem = EventNode:Combo({
     end
 })
 
--- Button
+-- Manual buy button
 EventNode:Button({Text = "Buy Selected Safari Item", Callback = BuySelectedSafariItem})
 
 -- Auto-buy loop
-coroutine.wrap(function()
-    while wait(0.5) do
+task.spawn(function()
+    while task.wait(0.5) do
         if AutoSafariBuy.Value then
             BuySelectedSafariItem()
         end
     end
-end)()
+end)
 
--- Refresh dropdown when shop GUI appears
+-- Refresh dropdown whenever Safari shop UI appears
 game.Players.LocalPlayer.PlayerGui.ChildAdded:Connect(function(Child)
     if Child.Name == "SafariIndividualRewards_UI" then
-        SelectedSafariItem:GetItems()
-    end
-end)
+ 
 
 --// Connections
 RunService.Stepped:Connect(NoclipLoop)
