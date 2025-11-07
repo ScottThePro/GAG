@@ -506,11 +506,9 @@ local function GetEventStock(IgnoreNoStock: boolean?): table
     local EventShop = PlayerGui:FindFirstChild("EventShop_UI")
     if not EventShop then return {} end
 
-    local ItemsContainer = EventShop:FindFirstChild("Items_Frame") or EventShop:FindFirstChildWhichIsA("Frame")
-    if not ItemsContainer then return {} end
-
     local NewList = {}
-    for _, Item in next, ItemsContainer:GetChildren() do
+    for _, Item in next, EventShop:GetChildren() do
+        -- Only consider frames with Main_Frame inside
         local MainFrame = Item:FindFirstChild("Main_Frame")
         if not MainFrame then continue end
 
@@ -587,5 +585,5 @@ end)
 RunService.Stepped:Connect(NoclipLoop)
 Backpack.ChildAdded:Connect(AutoSellCheck)
 
---// Start
+--// Start 1
 StartServices()
