@@ -496,34 +496,36 @@ local AutoEventBuy
 
 AutoEventBuy = EventNode:Checkbox({Value = false, Label = "Auto Buy Selected Safari Item"})
 
+-- Function to buy an item
 local function BuyEventItem(ItemName)
     if not ItemName or ItemName == "" then return end
     GameEvents.BuyEventStock:FireServer(ItemName)
 end
 
--- Get Safari Event Stock
+-- Get all Safari shop items
 local function GetEventStock(IgnoreNoStock: boolean?): table
     local EventShop = PlayerGui:FindFirstChild("EventShop_UI")
     if not EventShop then return {} end
 
     local NewList = {}
-    for _, Item in next, EventShop:GetChildren() do
-        -- Only consider frames with Main_Frame inside
-        local MainFrame = Item:FindFirstChild("Main_Frame")
-        if not MainFrame then continue end
 
-        local StockText = MainFrame:FindFirstChild("Stock_Text") and MainFrame.Stock_Text.Text or "1"
-        local StockCount = tonumber(StockText:match("%d+")) or 1
+    for _, Item in ipairs(EventShop:GetChildren()) do
+        if Item:IsA("Frame") then
+            -- Read stock from No_Stock TextLabel
+            local StockText = Item:FindFirstChild("No_Stock") and Item.No_Stock.Text or "1"
+            local StockCount = tonumber(StockText:match("%d+")) or 1
 
-        if IgnoreNoStock and StockCount <= 0 then continue end
+            if IgnoreNoStock and StockCount <= 0 then continue end
 
-        NewList[Item.Name] = StockCount
-        EventStock[Item.Name] = StockCount
+            NewList[Item.Name] = StockCount
+            EventStock[Item.Name] = StockCount
+        end
     end
+
     return IgnoreNoStock and NewList or EventStock
 end
 
--- Buy Selected or All Items
+-- Buy selected or all items
 local function BuySelectedEventItem()
     if SelectedEventItem.Selected == "Auto Buy All Safari Items" then
         GetEventStock()
@@ -542,7 +544,7 @@ local function BuySelectedEventItem()
     end
 end
 
--- Drop-down for Safari Items
+-- Drop-down for Safari items
 SelectedEventItem = EventNode:Combo({
     Label = "Select Safari Item",
     Selected = "",
@@ -563,6 +565,7 @@ SelectedEventItem = EventNode:Combo({
     end
 })
 
+-- Button to buy selected item
 EventNode:Button({Text = "Buy Selected Safari Item", Callback = BuySelectedEventItem})
 
 -- Auto-buy coroutine
@@ -581,9 +584,10 @@ PlayerGui.ChildAdded:Connect(function(Child)
     end
 end)
 
+
 --// Connections
 RunService.Stepped:Connect(NoclipLoop)
 Backpack.ChildAdded:Connect(AutoSellCheck)
 
---// Start 1
+--// Start 12
 StartServices()
