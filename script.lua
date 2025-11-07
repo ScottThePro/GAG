@@ -111,7 +111,23 @@ end
 local function BuySeed(Seed: string)
     GameEvents.BuySeedStock:FireServer(Seed)
 end
-
+local function BuyAllSelectedSeeds()
+    if SelectedSeedStock.Selected == "Auto Buy All Seeds" then
+        local StockList = GetSeedStock()
+        for SeedName, _ in pairs(StockList) do
+            BuySeed(SeedName)
+            wait(0.1)
+        end
+    else
+        local Seed = SelectedSeedStock.Selected
+        if not Seed or Seed == "" then return end
+        local Stock = SeedStock[Seed] or 1
+        for i = 1, Stock do
+            BuySeed(Seed)
+            wait(0.1)
+        end
+    end
+end
 local function GetSeedInfo(Seed: Tool)
     local PlantName = Seed:FindFirstChild("Plant_Name")
     local Count = Seed:FindFirstChild("Numbers")
@@ -559,5 +575,5 @@ end)
 RunService.Stepped:Connect(NoclipLoop)
 Backpack.ChildAdded:Connect(AutoSellCheck)
 
---// Start loops 1
+--// Start loops 11
 StartServices()
