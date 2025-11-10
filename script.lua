@@ -488,63 +488,67 @@ PlayerGui.ChildAdded:Connect(function(Child)
     end
 end)
 
---// Auto-Buy Safari Event 🦁
-local EventNode = Window:TreeNode({Title="Auto-Buy Safari Event 🦁"})
+--// Auto-Buy Safari Event 🦒
+local EventNode = Window:TreeNode({Title="Auto-Buy Safari Event 🦒"})
 local EventStock = {}
 local SelectedEventItem
 local AutoEventBuy
 
 AutoEventBuy = EventNode:Checkbox({Value = false, Label = "Auto Buy Selected Safari Item"})
 
--- Function to buy an item
 local function BuyEventItem(ItemName)
     if not ItemName or ItemName == "" then return end
     GameEvents.BuyEventStock:FireServer(ItemName)
 end
 
--- Get all Safari shop items
 local function GetEventStock(IgnoreNoStock: boolean?): table
     local EventShop = PlayerGui:FindFirstChild("EventShop_UI")
     if not EventShop then return {} end
 
+    local MainFrame = EventShop:FindFirstChild("Frame")
+    if not MainFrame then return {} end
+
+    local ScrollFrame = MainFrame:FindFirstChild("ScrollingFrame")
+    if not ScrollFrame then return {} end
+
     local NewList = {}
+    for _, Item in ipairs(ScrollFrame:GetChildren()) do
+        if Item:IsA("Frame") and Item:FindFirstChild("Sheckles_Buy") then
+            local BuyButton = Item.Sheckles_Buy
+            local InStock = BuyButton:FindFirstChild("In_Stock")
+            local NoStock = BuyButton:FindFirstChild("No_Stock")
 
-    for _, Item in ipairs(EventShop:GetChildren()) do
-        if Item:IsA("Frame") then
-            -- Read stock from No_Stock TextLabel
-            local StockText = Item:FindFirstChild("No_Stock") and Item.No_Stock.Text or "1"
-            local StockCount = tonumber(StockText:match("%d+")) or 1
+            local HasStock = InStock and InStock.Visible and (not NoStock or not NoStock.Visible)
+            if IgnoreNoStock and not HasStock then
+                continue
+            end
 
-            if IgnoreNoStock and StockCount <= 0 then continue end
-
-            NewList[Item.Name] = StockCount
-            EventStock[Item.Name] = StockCount
+            NewList[Item.Name] = HasStock and 1 or 0
+            EventStock[Item.Name] = HasStock and 1 or 0
         end
     end
 
     return IgnoreNoStock and NewList or EventStock
 end
 
--- Buy selected or all items
 local function BuySelectedEventItem()
     if SelectedEventItem.Selected == "Auto Buy All Safari Items" then
         GetEventStock()
-        for Name, _ in pairs(EventStock) do
-            BuyEventItem(Name)
-            wait(0.1)
+        for Name, HasStock in pairs(EventStock) do
+            if HasStock == 1 then
+                BuyEventItem(Name)
+                task.wait(0.15)
+            end
         end
     else
         local Item = SelectedEventItem.Selected
         if not Item or Item == "" then return end
-        local Stock = EventStock[Item] or 1
-        for i = 1, Stock do
-            BuyEventItem(Item)
-            wait(0.1)
-        end
+        local HasStock = EventStock[Item] == 1
+        if not HasStock then return end
+        BuyEventItem(Item)
     end
 end
 
--- Drop-down for Safari items
 SelectedEventItem = EventNode:Combo({
     Label = "Select Safari Item",
     Selected = "",
@@ -565,19 +569,16 @@ SelectedEventItem = EventNode:Combo({
     end
 })
 
--- Button to buy selected item
 EventNode:Button({Text = "Buy Selected Safari Item", Callback = BuySelectedEventItem})
 
--- Auto-buy coroutine
 coroutine.wrap(function()
-    while wait(0.5) do
+    while task.wait(0.5) do
         if AutoEventBuy.Value then
             BuySelectedEventItem()
         end
     end
 end)()
 
--- Refresh drop-down when Safari shop GUI is added
 PlayerGui.ChildAdded:Connect(function(Child)
     if Child.Name == "EventShop_UI" then
         SelectedEventItem:GetItems()
@@ -585,9 +586,10 @@ PlayerGui.ChildAdded:Connect(function(Child)
 end)
 
 
+
 --// Connections
 RunService.Stepped:Connect(NoclipLoop)
 Backpack.ChildAdded:Connect(AutoSellCheck)
 
---// Start 12
+--// Start 
 StartServices()
