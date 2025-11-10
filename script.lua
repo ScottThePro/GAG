@@ -489,7 +489,8 @@ PlayerGui.ChildAdded:Connect(function(Child)
     end
 end)
 
---Safari Event codelocal EventNode = Window:TreeNode({Title = "Auto-Buy Safari Event 🦒"})
+--Safari Event code
+local EventNode = Window:TreeNode({Title = "Auto-Buy Safari Event 🦒"})
 local SelectedEventItems = {} -- now a table for multi-select
 local AutoEventBuy
 
@@ -608,5 +609,5 @@ end)
 RunService.Stepped:Connect(NoclipLoop)
 Backpack.ChildAdded:Connect(AutoSellCheck)
 
---// Start    1
+--// Start
 StartServices()
