@@ -136,7 +136,6 @@ end
 --// Tabs & Sections
 local TabBuy = Window:CreateTab("Auto Buy", 4483362458)
 local SeedSection = TabBuy:CreateSection("Seeds")
-local GearSection = TabBuy:CreateSection("Gear")
 
 -- Seed Dropdown
 SelectedSeedDropdown = SeedSection:CreateDropdown({
@@ -160,6 +159,7 @@ AutoBuySeedsToggle = SeedSection:CreateToggle({
     end,
 })
 
+local GearSection = TabBuy:CreateSection("Gear")
 -- Gear Dropdown
 SelectedGearDropdown = GearSection:CreateDropdown({
     Name = "Select Gear",
@@ -205,5 +205,5 @@ end)
 -- Initial update
 UpdateSeedDropdown()
 
--- Load config
+-- Load config 1
 Rayfield:LoadConfiguration()
