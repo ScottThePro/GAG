@@ -2,6 +2,13 @@ debugX = true
 
 local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 
+--// Dicts
+local SeedStock = {}
+local OwnedSeeds = {}
+
+--// Globals
+local SelectedSeed, AutoBuy,
+
 --// Services
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local InsertService = game:GetService("InsertService")
@@ -70,23 +77,52 @@ local function GetSeedStock(IgnoreNoStock: boolean?): table
     return IgnoreNoStock and NewList or SeedStock
 end
 
--- Function to convert seed stock table into dropdown-friendly list
-local function GetSeedOptions()
-    local stockTable = GetSeedStock(true) -- true = ignore out-of-stock seeds
-    local options = {}
-    for seedName, stockCount in pairs(stockTable) do
-        table.insert(options, seedName .. " (" .. stockCount .. ")")
+-- Seed Dropdown for Rayfield
+local SeedDropdown = SeedSection:CreateDropdown({
+    Name = "Select Seeds",
+    Options = {}, -- initially empty
+    CurrentOption = {"Default"},
+    MultipleOptions = true,
+    Flag = "autobuyseeddropdown",
+    Callback = function(selectedSeeds)
+        print("Selected seeds:", selectedSeeds)
+        -- selectedSeeds is a table of strings like "Blueberry"
+    end,
+})
+
+-- Function to update dropdown with stock
+local function UpdateSeedDropdown()
+    -- Wait for Seed Shop GUI to exist
+    local SeedShop = PlayerGui:WaitForChild("Seed_Shop", 5)
+    if not SeedShop then return end
+
+    local StockList = GetSeedStock(true) -- true = ignore seeds with 0 stock
+    local options = {"Auto Buy All Seeds"} -- optional first entry
+    for seedName, _ in pairs(StockList) do
+        table.insert(options, seedName)
     end
-    return options
+
+    SeedDropdown:UpdateOptions(options)
 end
 
+-- Initial update
+UpdateSeedDropdown()
 
--- Optional: refresh the dropdown periodically
+-- Optional: refresh every 10 seconds
 spawn(function()
     while task.wait(10) do
-        SeedDropdown:UpdateOptions(GetSeedOptions())
+        UpdateSeedDropdown()
     end
 end)
+
+-- Update dropdown when Seed Shop GUI opens (in case it loads later)
+PlayerGui.ChildAdded:Connect(function(Child)
+    if Child.Name == "Seed_Shop" then
+        task.wait(0.2)
+        UpdateSeedDropdown()
+    end
+end)
+
 
 
 -- Auto Buy Tab
@@ -95,17 +131,6 @@ local TabBuy = Window:CreateTab("Auto Buy", 4483362458) -- Title, Image
 -- Auto Buy Seed Section
 local SeedSection = TabBuy:CreateSection("Seeds")
 
--- Seed drop down
-local SeedDropdown = SeedSection:CreateDropdown({
-    Name = "Select Seeds",
-    Options = GetSeedOptions(),
-    CurrentOption = {"Default"},
-    MultipleOptions = true,
-    Flag = "autobuyseeddropdown",
-    Callback = function(selectedOptions)
-        -- selectedOptions is a table of selected seeds like "Blueberry (5)"
-    end,
-})
 local SeedToggle = SeedSection:CreateToggle({
     Name = "Auto Buy Seeds",
     CurrentValue = false,
@@ -137,5 +162,5 @@ local GearToggle = GearSection:CreateToggle({
         -- Value is true/false
     end,
 })
---1
+--2
 Rayfield:LoadConfiguration()
