@@ -51,15 +51,53 @@ local Window = Rayfield:CreateWindow({
    }
 })
 
-local Tab = Window:CreateTab("Seeds", 4483362458) -- Title, Image
+-- Auto Buy Section
+local TabBuy = Window:CreateTab("Auto Buy", 4483362458) -- Title, Image
+--Auto buy seed section
+local SeedSection = TabBuy:CreateSection("Seeds")
+local SeedDropdown = TabBuy:CreateDropdown({
+	Name = "Select Seeds",
+		Options = thoptions,
+		CurrentOption = {"Default"},
+		MultipleOptions = false,
+		Flag = "autobuyseeddropdown", -- A flag is the identifier for the configuration file, make sure every element has a different flag if you're using configuration saving to ensure no overlaps
+		Callback = function(Options)
+			--Window.ModifyTheme(Options[1])
+			-- The function that takes place when the selected option is changed
+			-- The variable (Options) is a table of strings for the current selected options
+		end,
+	})
+local SeedToggle = TabBuy:CreateToggle({
+		Name = "Auto Buy Seeds",
+		CurrentValue = false,
+		Flag = "autobuyseedtoggle", -- A flag is the identifier for the configuration file, make sure every element has a different flag if you're using configuration saving to ensure no overlaps
+		Callback = function(Value)
+			-- The function that takes place when the toggle is pressed
+			-- The variable (Value) is a boolean on whether the toggle is true or false
+		end,
+	})
 
-local Section = Tab:CreateSection("Seed Section")
-
-local Button = Tab:CreateButton({
-   Name = "Button Example",
-   Callback = function()
-   -- The function that takes place when the button is pressed
-   end,
-})
+local GearSection = TabBuy:CreateSection("Gear")
+local GearDropdown = TabBuy:CreateDropdown({
+	Name = "Select Gear",
+		Options = thoptions,
+		CurrentOption = {"Default"},
+		MultipleOptions = false,
+		Flag = "autobuygeardropdown", -- A flag is the identifier for the configuration file, make sure every element has a different flag if you're using configuration saving to ensure no overlaps
+		Callback = function(Options)
+			--Window.ModifyTheme(Options[1])
+			-- The function that takes place when the selected option is changed
+			-- The variable (Options) is a table of strings for the current selected options
+		end,
+	})
+local GearToggle = TabBuy:CreateToggle({
+		Name = "Auto Buy Gear",
+		CurrentValue = false,
+		Flag = "autobuygeartoggle", -- A flag is the identifier for the configuration file, make sure every element has a different flag if you're using configuration saving to ensure no overlaps
+		Callback = function(Value)
+			-- The function that takes place when the toggle is pressed
+			-- The variable (Value) is a boolean on whether the toggle is true or false
+		end,
+	})
 
 Rayfield:LoadConfiguration()
