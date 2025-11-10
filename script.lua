@@ -6,9 +6,6 @@ local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 local SeedStock = {}
 local OwnedSeeds = {}
 
---// Globals
-local SelectedSeed, AutoBuy,
-
 --// Services
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local InsertService = game:GetService("InsertService")
