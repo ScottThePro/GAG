@@ -18,7 +18,7 @@ local ShecklesCount = Leaderstats.Sheckles
 local GameInfo = MarketplaceService:GetProductInfo(game.PlaceId)
 
 local Window = Rayfield:CreateWindow({
-   Name = "{GameInfo.Name} : Cheat Engine",
+   Name = GameInfo.Name .. " : Cheat Engine",
    Icon = 0, -- Icon in Topbar. Can use Lucide Icons (string) or Roblox Image (number). 0 to use no icon (default).
    LoadingTitle = "GAG Cheat Engine",
    LoadingSubtitle = "by noone",
@@ -51,12 +51,24 @@ local Window = Rayfield:CreateWindow({
    }
 })
 
--- Functions
---Seed functions
-local function GetSeedStock(IgnoreNoStock: boolean?): table
-    local SeedShop = PlayerGui.Seed_Shop
+--// Dicts
+local SeedStock = {}
+local OwnedSeeds = {}
+local thoptions = {"Trowel", "Hoe", "Shovel"} -- Replace with actual gear names
+
+--// Globals
+local SelectedSeedDropdown, SelectedGearDropdown
+local AutoBuySeedsToggle, AutoBuyGearToggle
+
+--// Functions
+local function GetSeedStock(IgnoreNoStock)
+    local SeedShop = PlayerGui:FindFirstChild("Seed_Shop")
     if not SeedShop then return {} end
-    local Items = SeedShop:FindFirstChild("Blueberry", true).Parent
+
+    local Items = SeedShop:FindFirstChild("Blueberry", true)
+    if not Items then return {} end
+    Items = Items.Parent
+
     local NewList = {}
     for _, Item in next, Items:GetChildren() do
         local MainFrame = Item:FindFirstChild("Main_Frame")
@@ -70,32 +82,119 @@ local function GetSeedStock(IgnoreNoStock: boolean?): table
     return IgnoreNoStock and NewList or SeedStock
 end
 
--- Function to update dropdown with stock
 local function UpdateSeedDropdown()
-    -- Wait for Seed Shop GUI to exist
-    local SeedShop = PlayerGui.Seed_Shop
-    if not SeedShop then return end
-
-    local StockList = GetSeedStock(false) -- true = ignore seeds with 0 stock
-    local options = {"Auto Buy All Seeds"} -- optional first entry
+    if not SelectedSeedDropdown then return end
+    local StockList = GetSeedStock(false)
+    local options = {"Auto Buy All Seeds"}
     for seedName, _ in pairs(StockList) do
         table.insert(options, seedName)
     end
-
-    SeedDropdown:UpdateOptions(options)
+    SelectedSeedDropdown:UpdateOptions(options)
 end
 
--- Initial update
-UpdateSeedDropdown()
+local function BuySeed(SeedName)
+    if not SeedName or SeedName == "" then return end
+    ReplicatedStorage.GameEvents.BuySeedStock:FireServer(SeedName)
+end
 
--- Optional: refresh every 10 seconds
+local function BuySelectedSeeds(selectedSeeds)
+    if not selectedSeeds or #selectedSeeds == 0 then return end
+    if table.find(selectedSeeds, "Auto Buy All Seeds") then
+        local allSeeds = GetSeedStock(false)
+        for seedName, _ in pairs(allSeeds) do
+            BuySeed(seedName)
+            task.wait(0.1)
+        end
+    else
+        for _, seedName in ipairs(selectedSeeds) do
+            BuySeed(seedName)
+            task.wait(0.1)
+        end
+    end
+end
+
+local function BuyGear(GearName)
+    if not GearName or GearName == "" then return end
+    ReplicatedStorage.GameEvents.BuyGearStock:FireServer(GearName)
+end
+
+local function BuySelectedGear(selectedGears)
+    if not selectedGears or #selectedGears == 0 then return end
+    if table.find(selectedGears, "Auto Buy All Gear") then
+        for _, gearName in ipairs(thoptions) do
+            BuyGear(gearName)
+            task.wait(0.1)
+        end
+    else
+        for _, gearName in ipairs(selectedGears) do
+            BuyGear(gearName)
+            task.wait(0.1)
+        end
+    end
+end
+
+--// Tabs & Sections
+local TabBuy = Window:CreateTab("Auto Buy", 4483362458)
+local SeedSection = TabBuy:CreateSection("Seeds")
+local GearSection = TabBuy:CreateSection("Gear")
+
+-- Seed Dropdown
+SelectedSeedDropdown = SeedSection:CreateDropdown({
+    Name = "Select Seeds",
+    Options = {},
+    CurrentOption = {"Default"},
+    MultipleOptions = true,
+    Flag = "autobuyseeddropdown",
+    Callback = function(selectedSeeds)
+        print("Selected seeds:", selectedSeeds)
+    end,
+})
+
+-- Auto Buy Seeds Toggle
+AutoBuySeedsToggle = SeedSection:CreateToggle({
+    Name = "Auto Buy Seeds",
+    CurrentValue = false,
+    Flag = "autobuyseedtoggle",
+    Callback = function(Value)
+        -- Value true/false
+    end,
+})
+
+-- Gear Dropdown
+SelectedGearDropdown = GearSection:CreateDropdown({
+    Name = "Select Gear",
+    Options = {"Auto Buy All Gear", table.unpack(thoptions)},
+    CurrentOption = {"Default"},
+    MultipleOptions = true,
+    Flag = "autobuygeardropdown",
+    Callback = function(selectedGears)
+        print("Selected gear:", selectedGears)
+    end,
+})
+
+-- Auto Buy Gear Toggle
+AutoBuyGearToggle = GearSection:CreateToggle({
+    Name = "Auto Buy Gear",
+    CurrentValue = false,
+    Flag = "autobuygeartoggle",
+    Callback = function(Value)
+        -- Value true/false
+    end,
+})
+
+-- Auto-buy loops
 spawn(function()
-    while task.wait(10) do
-        UpdateSeedDropdown()
+    while task.wait(0.5) do
+        if AutoBuySeedsToggle.CurrentValue then
+            BuySelectedSeeds(SelectedSeedDropdown:Get())
+        end
+        if AutoBuyGearToggle.CurrentValue then
+            BuySelectedGear(SelectedGearDropdown:Get())
+        end
     end
 end)
 
--- Update dropdown when Seed Shop GUI opens (in case it loads later)
+-- Update seed dropdown when Seed Shop GUI opens
 PlayerGui.ChildAdded:Connect(function(Child)
     if Child.Name == "Seed_Shop" then
         task.wait(0.2)
@@ -103,56 +202,8 @@ PlayerGui.ChildAdded:Connect(function(Child)
     end
 end)
 
+-- Initial update
+UpdateSeedDropdown()
 
-
--- Auto Buy Tab
-local TabBuy = Window:CreateTab("Auto Buy", 4483362458) -- Title, Image
-
--- Auto Buy Seed Section
-local SeedSection = TabBuy:CreateSection("Seeds")
-
--- Seed Dropdown for Rayfield
-local SeedDropdown = SeedSection:CreateDropdown({
-    Name = "Select Seeds",
-    Options = {}, -- initially empty
-    CurrentOption = {"Default"},
-    MultipleOptions = true,
-    Flag = "autobuyseeddropdown",
-    Callback = function(selectedSeeds)
-        print("Selected seeds:", selectedSeeds)
-        -- selectedSeeds is a table of strings like "Blueberry"
-    end,
-})
-local SeedToggle = SeedSection:CreateToggle({
-    Name = "Auto Buy Seeds",
-    CurrentValue = false,
-    Flag = "autobuyseedtoggle",
-    Callback = function(Value)
-        -- Value is true/false
-    end,
-})
-
--- Auto Buy Gear Section
-local GearSection = TabBuy:CreateSection("Gear")
-
-local GearDropdown = GearSection:CreateDropdown({
-    Name = "Select Gear",
-    Options = thoptions,
-    CurrentOption = {"Default"},
-    MultipleOptions = true,
-    Flag = "autobuygeardropdown",
-    Callback = function(Options)
-        -- Options is a table of selected gear
-    end,
-})
-
-local GearToggle = GearSection:CreateToggle({
-    Name = "Auto Buy Gear",
-    CurrentValue = false,
-    Flag = "autobuygeartoggle",
-    Callback = function(Value)
-        -- Value is true/false
-    end,
-})
---1
+-- Load config
 Rayfield:LoadConfiguration()
