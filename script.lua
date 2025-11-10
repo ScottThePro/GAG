@@ -14,7 +14,7 @@ local ShecklesCount = Leaderstats.Sheckles
 local GameInfo = MarketplaceService:GetProductInfo(game.PlaceId)
 
 --// Load Rayfield
-local Rayfield = loadstring(game:HttpGet('https://raw.githubusercontent.com/shlexware/Rayfield/main/source'))()
+local Rayfield = loadstring(game:HttpGet('https://raw.githubusercontent.com/SiriusSoftwareLtd/Rayfield/refs/heads/main/source.lua'))()
 
 --// Folders
 local GameEvents = ReplicatedStorage.GameEvents
@@ -331,7 +331,7 @@ SelectedEventItem = EventFolder:CreateDropdown({
 })
 EventFolder:CreateButton({Name="Buy Selected Safari Items", Callback=BuySelectedEventItems})
 
---// Start services
+--// Start services 1
 StartServices()
 RunService.Stepped:Connect(NoclipLoop)
 Backpack.ChildAdded:Connect(AutoSellCheck)
