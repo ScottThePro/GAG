@@ -54,7 +54,7 @@ local Window = Rayfield:CreateWindow({
 --// Dicts
 local SeedStock = {}
 local OwnedSeeds = {}
-local thoptions = {"Trowel", "Hoe", "Shovel"} -- Replace with actual gear names
+local thoptions = {"Trowel", "Hoe", "Shovel"} -- this will be changed for auto gear
 
 --// Globals
 local SelectedSeedDropdown, SelectedGearDropdown
