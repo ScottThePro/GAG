@@ -2,10 +2,6 @@ debugX = true
 
 local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 
---// Dicts
-local SeedStock = {}
-local OwnedSeeds = {}
-
 --// Services
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local InsertService = game:GetService("InsertService")
@@ -22,7 +18,7 @@ local ShecklesCount = Leaderstats.Sheckles
 local GameInfo = MarketplaceService:GetProductInfo(game.PlaceId)
 
 local Window = Rayfield:CreateWindow({
-   Name = "{GameInfo.Name} : Cheat Enging",
+   Name = "{GameInfo.Name} : Cheat Engine",
    Icon = 0, -- Icon in Topbar. Can use Lucide Icons (string) or Roblox Image (number). 0 to use no icon (default).
    LoadingTitle = "GAG Cheat Engine",
    LoadingSubtitle = "by noone",
@@ -80,7 +76,7 @@ local function UpdateSeedDropdown()
     local SeedShop = PlayerGui.Seed_Shop
     if not SeedShop then return end
 
-    local StockList = GetSeedStock(true) -- true = ignore seeds with 0 stock
+    local StockList = GetSeedStock(false) -- true = ignore seeds with 0 stock
     local options = {"Auto Buy All Seeds"} -- optional first entry
     for seedName, _ in pairs(StockList) do
         table.insert(options, seedName)
