@@ -192,39 +192,42 @@ BuyFolder:CreateButton({
     end
 })
 
--- Auto-Gear
-local GearFolder = Window:CreateTab("Auto-Gear 🧤")
-AutoGear = GearFolder:CreateToggle({Name="Auto Buy Selected Gear", CurrentValue=false, Flag="AutoGear"})
-SelectedGear = GearFolder:CreateDropdown({
-    Name="Select Gear",
-    Options=function()
-        local GearList = {"Auto Buy All Gear"}
-        local stock = GetGearStock()
-        for name,_ in pairs(stock) do table.insert(GearList, name) end
-        return GearList
-    end,
-    CurrentOption="",
-    Flag="SelectedGear"
-})
-GearFolder:CreateButton({Name="Buy Selected Gear", Callback=BuySelectedGear})
+local Seeds = Window:CreateTab("Seeds", 4483362458) -- Title, Image
 
--- Safari Event
-local EventFolder = Window:CreateTab("Auto-Buy Safari Event 🦒")
-AutoEventBuy = EventFolder:CreateToggle({Name="Auto Buy Selected Safari Items", CurrentValue=false, Flag="AutoEventBuy"})
-SelectedEventItem = EventFolder:CreateDropdown({
-    Name="Select Safari Items",
-    Options=function()
-        local list = {"Auto Buy All Safari Items"}
-        for _,name in pairs(GetEventItems()) do table.insert(list, name) end
-        return list
-    end,
-    MultiSelect=true,
-    CurrentOption={},
-    Flag="SelectedEventItem"
-})
-EventFolder:CreateButton({Name="Buy Selected Safari Items", Callback=BuySelectedEventItems})
+local SeedsSection = Seeds:CreateSection("Section Example")
 
---// Start services 1
+local SeedsButton = Seeds:CreateButton({
+	Name = "Buy all",
+    Callback = function()
+        local seed = SelectedSeedStock["Value"]
+        if seed == "Auto Buy All Seeds" then
+            for name,_ in pairs(GetSeedStock()) do
+                BuySeed(name)
+                task.wait(0.1)
+            end
+        else
+            BuySeed(seed)
+        end
+    end
+})
+local SeedsToggle = Seeds:CreateToggle({
+    Name = "Enabled",
+    CurrentValue = false,
+    Flag = "AutoBuy"
+})
+local Dropdown = Seeds:CreateDropdown({
+	 Name = "Seed",
+    Options = function()
+        local seeds = {"Auto Buy All Seeds"}
+        for name,_ in pairs(GetSeedStock()) do table.insert(seeds, name) end
+        return seeds
+    end,
+    CurrentOption = "",
+    Flag = "SelectedSeedStock"
+})
+
+
+--// Start services
 StartServices()
 RunService.Stepped:Connect(NoclipLoop)
 Backpack.ChildAdded:Connect(AutoSellCheck)
