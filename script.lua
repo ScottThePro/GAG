@@ -51,53 +51,91 @@ local Window = Rayfield:CreateWindow({
    }
 })
 
--- Auto Buy Section
+-- Functions
+--Seed functions
+local function GetSeedStock(IgnoreNoStock: boolean?): table
+    local SeedShop = PlayerGui.Seed_Shop
+    if not SeedShop then return {} end
+    local Items = SeedShop:FindFirstChild("Blueberry", true).Parent
+    local NewList = {}
+    for _, Item in next, Items:GetChildren() do
+        local MainFrame = Item:FindFirstChild("Main_Frame")
+        if not MainFrame then continue end
+        local StockText = MainFrame.Stock_Text.Text
+        local StockCount = tonumber(StockText:match("%d+")) or 0
+        if IgnoreNoStock and StockCount <= 0 then continue end
+        NewList[Item.Name] = StockCount
+        SeedStock[Item.Name] = StockCount
+    end
+    return IgnoreNoStock and NewList or SeedStock
+end
+
+-- Function to convert seed stock table into dropdown-friendly list
+local function GetSeedOptions()
+    local stockTable = GetSeedStock(true) -- true = ignore out-of-stock seeds
+    local options = {}
+    for seedName, stockCount in pairs(stockTable) do
+        table.insert(options, seedName .. " (" .. stockCount .. ")")
+    end
+    return options
+end
+
+
+-- Optional: refresh the dropdown periodically
+spawn(function()
+    while task.wait(10) do
+        SeedDropdown:UpdateOptions(GetSeedOptions())
+    end
+end)
+
+
+-- Auto Buy Tab
 local TabBuy = Window:CreateTab("Auto Buy", 4483362458) -- Title, Image
---Auto buy seed section
+
+-- Auto Buy Seed Section
 local SeedSection = TabBuy:CreateSection("Seeds")
-local SeedDropdown = TabBuy:CreateDropdown({
-	Name = "Select Seeds",
-		Options = thoptions,
-		CurrentOption = {"Default"},
-		MultipleOptions = false,
-		Flag = "autobuyseeddropdown", -- A flag is the identifier for the configuration file, make sure every element has a different flag if you're using configuration saving to ensure no overlaps
-		Callback = function(Options)
-			--Window.ModifyTheme(Options[1])
-			-- The function that takes place when the selected option is changed
-			-- The variable (Options) is a table of strings for the current selected options
-		end,
-	})
-local SeedToggle = TabBuy:CreateToggle({
-		Name = "Auto Buy Seeds",
-		CurrentValue = false,
-		Flag = "autobuyseedtoggle", -- A flag is the identifier for the configuration file, make sure every element has a different flag if you're using configuration saving to ensure no overlaps
-		Callback = function(Value)
-			-- The function that takes place when the toggle is pressed
-			-- The variable (Value) is a boolean on whether the toggle is true or false
-		end,
-	})
 
+-- Seed drop down
+local SeedDropdown = SeedSection:CreateDropdown({
+    Name = "Select Seeds",
+    Options = GetSeedOptions(),
+    CurrentOption = {"Default"},
+    MultipleOptions = true,
+    Flag = "autobuyseeddropdown",
+    Callback = function(selectedOptions)
+        -- selectedOptions is a table of selected seeds like "Blueberry (5)"
+    end,
+})
+local SeedToggle = SeedSection:CreateToggle({
+    Name = "Auto Buy Seeds",
+    CurrentValue = false,
+    Flag = "autobuyseedtoggle",
+    Callback = function(Value)
+        -- Value is true/false
+    end,
+})
+
+-- Auto Buy Gear Section
 local GearSection = TabBuy:CreateSection("Gear")
-local GearDropdown = TabBuy:CreateDropdown({
-	Name = "Select Gear",
-		Options = thoptions,
-		CurrentOption = {"Default"},
-		MultipleOptions = false,
-		Flag = "autobuygeardropdown", -- A flag is the identifier for the configuration file, make sure every element has a different flag if you're using configuration saving to ensure no overlaps
-		Callback = function(Options)
-			--Window.ModifyTheme(Options[1])
-			-- The function that takes place when the selected option is changed
-			-- The variable (Options) is a table of strings for the current selected options
-		end,
-	})
-local GearToggle = TabBuy:CreateToggle({
-		Name = "Auto Buy Gear",
-		CurrentValue = false,
-		Flag = "autobuygeartoggle", -- A flag is the identifier for the configuration file, make sure every element has a different flag if you're using configuration saving to ensure no overlaps
-		Callback = function(Value)
-			-- The function that takes place when the toggle is pressed
-			-- The variable (Value) is a boolean on whether the toggle is true or false
-		end,
-	})
 
+local GearDropdown = GearSection:CreateDropdown({
+    Name = "Select Gear",
+    Options = thoptions,
+    CurrentOption = {"Default"},
+    MultipleOptions = true,
+    Flag = "autobuygeardropdown",
+    Callback = function(Options)
+        -- Options is a table of selected gear
+    end,
+})
+
+local GearToggle = GearSection:CreateToggle({
+    Name = "Auto Buy Gear",
+    CurrentValue = false,
+    Flag = "autobuygeartoggle",
+    Callback = function(Value)
+        -- Value is true/false
+    end,
+})
+--1
 Rayfield:LoadConfiguration()
