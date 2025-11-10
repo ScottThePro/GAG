@@ -20,6 +20,7 @@ local PrefabsId = "rbxassetid://" .. ReGui.PrefabsId
 --// Folders
 local GameEvents = ReplicatedStorage.GameEvents
 local Farms = workspace.Farm
+local BuyEventShopStock = ReplicatedStorage.GameEvents:WaitForChild("BuyEventShopStock")
 
 local Accent = {
     DarkGreen = Color3.fromRGB(45, 95, 25),
@@ -489,102 +490,107 @@ PlayerGui.ChildAdded:Connect(function(Child)
 end)
 
 --Safari Event code
+
 local EventNode = Window:TreeNode({Title = "Auto-Buy Safari Event 🦒"})
 local SelectedEventItem
 local AutoEventBuy
 
 AutoEventBuy = EventNode:Checkbox({
-	Value = false,
-	Label = "Auto Buy Selected Safari Item"
+    Value = false,
+    Label = "Auto Buy Selected Safari Item"
 })
 
 local function BuyEventItem(ItemName)
-	if not ItemName or ItemName == "" then return end
-	GameEvents.BuyEventStock:FireServer(ItemName)
+    if not ItemName or ItemName == "" then return end
+    print("Buying:", ItemName)
+    BuyEventShopStock:FireServer(ItemName, "Safari Shop")
 end
 
 local function GetEventItems(): table
-	local eventShop = PlayerGui:FindFirstChild("EventShop_UI")
-	if not eventShop then return {} end
+    local eventShop = PlayerGui:FindFirstChild("EventShop_UI")
+    if not eventShop then return {} end
+    local mainFrame = eventShop:FindFirstChild("Frame")
+    if not mainFrame then return {} end
+    local scroll = mainFrame:FindFirstChild("ScrollingFrame")
+    if not scroll then return {} end
 
-	local mainFrame = eventShop:FindFirstChild("Frame")
-	if not mainFrame then return {} end
-
-	local scroll = mainFrame:FindFirstChild("ScrollingFrame")
-	if not scroll then return {} end
-
-	local items = {}
-	for _, child in pairs(scroll:GetChildren()) do
-		if child:IsA("Frame") then
-			table.insert(items, child.Name)
-		end
-	end
-
-	table.sort(items)
-	return items
+    local items = {}
+    for _, child in pairs(scroll:GetChildren()) do
+        if child:IsA("Frame") then
+            local name = child.Name
+            if not name:match("_Padding") 
+               and not name:match("ItemPadding")
+               and not name:match("UI")
+               and not name:match("Layout")
+            then
+                table.insert(items, name)
+            end
+        end
+    end
+    table.sort(items)
+    return items
 end
 
 local function BuySelectedEventItem()
-	if SelectedEventItem.Selected == "Auto Buy All Safari Items" then
-		local items = GetEventItems()
-		for _, name in pairs(items) do
-			BuyEventItem(name)
-			task.wait(0.15)
-		end
-	else
-		local item = SelectedEventItem.Selected
-		if not item or item == "" then return end
-		BuyEventItem(item)
-	end
+    if SelectedEventItem.Selected == "Auto Buy All Safari Items" then
+        local items = GetEventItems()
+        for _, name in pairs(items) do
+            BuyEventItem(name)
+            task.wait(0.15)
+        end
+    else
+        local item = SelectedEventItem.Selected
+        if not item or item == "" then return end
+        BuyEventItem(item)
+    end
 end
 
 SelectedEventItem = EventNode:Combo({
-	Label = "Select Safari Item",
-	Selected = "",
-	GetItems = function()
-		local list = GetEventItems()
-		local ordered = {"Auto Buy All Safari Items"}
-		for _, name in pairs(list) do
-			table.insert(ordered, name)
-		end
-		return ordered
-	end,
-	Callback = function(_, selected)
-		if selected == "Auto Buy All Safari Items" then
-			AutoEventBuy:SetLabel("Auto Buy All Safari Items")
-		else
-			AutoEventBuy:SetLabel("Auto Buy Selected Safari Item")
-		end
-	end
+    Label = "Select Safari Item",
+    Selected = "",
+    GetItems = function()
+        local list = GetEventItems()
+        local ordered = {"Auto Buy All Safari Items"}
+        for _, name in pairs(list) do
+            table.insert(ordered, name)
+        end
+        return ordered
+    end,
+    Callback = function(_, selected)
+        if selected == "Auto Buy All Safari Items" then
+            AutoEventBuy:SetLabel("Auto Buy All Safari Items")
+        else
+            AutoEventBuy:SetLabel("Auto Buy Selected Safari Item")
+        end
+    end
 })
 
 EventNode:Button({
-	Text = "Buy Selected Safari Item",
-	Callback = BuySelectedEventItem
+    Text = "Buy Selected Safari Item",
+    Callback = BuySelectedEventItem
 })
 
 -- Auto loop
 task.spawn(function()
-	while task.wait(0.5) do
-		if AutoEventBuy.Value then
-			BuySelectedEventItem()
-		end
-	end
+    while task.wait(0.5) do
+        if AutoEventBuy.Value then
+            BuySelectedEventItem()
+        end
+    end
 end)
 
--- Refresh when GUI opens
+-- Refresh dropdown when GUI opens
 PlayerGui.ChildAdded:Connect(function(child)
-	if child.Name == "EventShop_UI" then
-		task.wait(0.2)
-		SelectedEventItem:GetItems()
-	end
+    if child.Name == "EventShop_UI" then
+        task.wait(0.2)
+        SelectedEventItem:GetItems()
+    end
 end)
-
 
 
 --// Connections
 RunService.Stepped:Connect(NoclipLoop)
 Backpack.ChildAdded:Connect(AutoSellCheck)
 
---// Start   
+--// Start    1
 StartServices()
