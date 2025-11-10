@@ -161,37 +161,6 @@ end
 
 --// =================== Rayfield GUI =================== --
 -- Auto-Buy Seeds
-local BuyFolder = Window:CreateTab("Seeds 🥕")
-AutoBuy = BuyFolder:CreateToggle({
-    Name = "Enabled",
-    CurrentValue = false,
-    Flag = "AutoBuy"
-})
-SelectedSeedStock = BuyFolder:CreateDropdown({
-    Name = "Seed",
-    Options = function()
-        local seeds = {"Auto Buy All Seeds"}
-        for name,_ in pairs(GetSeedStock()) do table.insert(seeds, name) end
-        return seeds
-    end,
-    CurrentOption = "",
-    Flag = "SelectedSeedStock"
-})
-BuyFolder:CreateButton({
-    Name = "Buy all",
-    Callback = function()
-        local seed = SelectedSeedStock["Value"]
-        if seed == "Auto Buy All Seeds" then
-            for name,_ in pairs(GetSeedStock()) do
-                BuySeed(name)
-                task.wait(0.1)
-            end
-        else
-            BuySeed(seed)
-        end
-    end
-})
-
 local Seeds = Window:CreateTab("Seeds", 4483362458) -- Title, Image
 
 local SeedsSection = Seeds:CreateSection("Section Example")
@@ -227,7 +196,7 @@ local Dropdown = Seeds:CreateDropdown({
 })
 
 
---// Start services
+--// Start services1 
 StartServices()
 RunService.Stepped:Connect(NoclipLoop)
 Backpack.ChildAdded:Connect(AutoSellCheck)
