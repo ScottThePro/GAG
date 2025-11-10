@@ -52,87 +52,8 @@ local Window = Rayfield:CreateWindow({
 })
 
 --// Dicts
-local SeedStock = {}
-local OwnedSeeds = {}
 local gearptions = {"Trowel", "Hoe", "Shovel"} -- this will be changed for auto gear
 local seedoptions = {"Carrot", "Strawberry", "Blueberry"}
-
---// Globals
-local SelectedSeedDropdown, SelectedGearDropdown
-local AutoBuySeedsToggle, AutoBuyGearToggle
-
---// Functions
-local function GetSeedStock(IgnoreNoStock)
-    local SeedShop = PlayerGui:FindFirstChild("Seed_Shop")
-    if not SeedShop then return {} end
-
-    local Items = SeedShop:FindFirstChild("Blueberry", true)
-    if not Items then return {} end
-    Items = Items.Parent
-
-    local NewList = {}
-    for _, Item in next, Items:GetChildren() do
-        local MainFrame = Item:FindFirstChild("Main_Frame")
-        if not MainFrame then continue end
-        local StockText = MainFrame.Stock_Text.Text
-        local StockCount = tonumber(StockText:match("%d+")) or 0
-        if IgnoreNoStock and StockCount <= 0 then continue end
-        NewList[Item.Name] = StockCount
-        SeedStock[Item.Name] = StockCount
-    end
-    return IgnoreNoStock and NewList or SeedStock
-end
-
-local function UpdateSeedDropdown()
-    if not SelectedSeedDropdown then return end
-    local StockList = GetSeedStock(false)
-    local options = {"Auto Buy All Seeds"}
-    for seedName, _ in pairs(StockList) do
-        table.insert(options, seedName)
-    end
-    SelectedSeedDropdown:UpdateOptions(options)
-end
-
-local function BuySeed(SeedName)
-    if not SeedName or SeedName == "" then return end
-    ReplicatedStorage.GameEvents.BuySeedStock:FireServer(SeedName)
-end
-
-local function BuySelectedSeeds(selectedSeeds)
-    if not selectedSeeds or #selectedSeeds == 0 then return end
-    if table.find(selectedSeeds, "Auto Buy All Seeds") then
-        local allSeeds = GetSeedStock(false)
-        for seedName, _ in pairs(allSeeds) do
-            BuySeed(seedName)
-            task.wait(0.1)
-        end
-    else
-        for _, seedName in ipairs(selectedSeeds) do
-            BuySeed(seedName)
-            task.wait(0.1)
-        end
-    end
-end
-
-local function BuyGear(GearName)
-    if not GearName or GearName == "" then return end
-    ReplicatedStorage.GameEvents.BuyGearStock:FireServer(GearName)
-end
-
-local function BuySelectedGear(selectedGears)
-    if not selectedGears or #selectedGears == 0 then return end
-    if table.find(selectedGears, "Auto Buy All Gear") then
-        for _, gearName in ipairs(thoptions) do
-            BuyGear(gearName)
-            task.wait(0.1)
-        end
-    else
-        for _, gearName in ipairs(selectedGears) do
-            BuyGear(gearName)
-            task.wait(0.1)
-        end
-    end
-end
 
 -- Auto Buy Tab
 local TabBuy = Window:CreateTab("Auto Buy", 4483362458) -- Title, Image
@@ -140,7 +61,7 @@ local TabBuy = Window:CreateTab("Auto Buy", 4483362458) -- Title, Image
 -- Auto Buy Seed Section
 local SeedSection = TabBuy:CreateSection("Seeds")
 
- SelectedSeedDropdown = SeedSection:CreateDropdown({
+local SeedDropdown = SeedSection:CreateDropdown({
     Name = "Select Seeds",
     Options = seedoptions,
     CurrentOption = {"Default"},
@@ -163,7 +84,7 @@ local SeedToggle = SeedSection:CreateToggle({
 -- Auto Buy Gear Section
 local GearSection = TabBuy:CreateSection("Gear")
 
-SelectedearDropdown = GearSection:CreateDropdown({
+local GearDropdown = GearSection:CreateDropdown({
     Name = "Select Gear",
     Options = gearoptions,
     CurrentOption = {"Default"},
@@ -182,17 +103,8 @@ local GearToggle = GearSection:CreateToggle({
         -- Value is true/false
     end,
 })
+     
 
--- Update seed dropdown when Seed Shop GUI opens
-PlayerGui.ChildAdded:Connect(function(Child)
-    if Child.Name == "Seed_Shop" then
-        task.wait(0.2)
-        UpdateSeedDropdown()
-    end
-end)
 
--- Initial update
-UpdateSeedDropdown()
-
--- Load config 2
+-- Load config new
 Rayfield:LoadConfiguration()
