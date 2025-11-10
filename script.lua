@@ -49,47 +49,6 @@ local Window = Rayfield:CreateWindow({
     KeySystem = false
 })
 
---// Game Functions
-local function Plant(Position: Vector3, Seed: string)
-    GameEvents.Plant_RE:FireServer(Position, Seed)
-    wait(.3)
-end
-
-local function GetFarms()
-    return Farms:GetChildren()
-end
-
-local function GetFarmOwner(Farm: Folder): string
-    return Farm.Important.Data.Owner.Value
-end
-
-local function GetFarm(PlayerName: string): Folder?
-    for _, Farm in next, GetFarms() do
-        if GetFarmOwner(Farm) == PlayerName then
-            return Farm
-        end
-    end
-    return
-end
-
-local IsSelling = false
-local function SellInventory()
-    local Character = LocalPlayer.Character
-    local Previous = Character:GetPivot()
-    local PreviousSheckles = ShecklesCount.Value
-
-    if IsSelling then return end
-    IsSelling = true
-
-    Character:PivotTo(CFrame.new(62, 4, -26))
-    while wait() do
-        if ShecklesCount.Value ~= PreviousSheckles then break end
-        GameEvents.Sell_Inventory:FireServer()
-    end
-    Character:PivotTo(Previous)
-    wait(0.2)
-    IsSelling = false
-end
 
 local function BuySeed(Seed: string)
     GameEvents.BuySeedStock:FireServer(Seed)
@@ -200,61 +159,9 @@ local function HarvestPlant(Plant: Model)
     fireproximityprompt(Prompt)
 end
 
---// Seed & Gear & Safari Event Functions remain mostly unchanged
--- I'll patch only the UI parts to Rayfield below:
-
 --// =================== Rayfield GUI =================== --
-
--- Auto-Plant
-local PlantFolder = Window:CreateTab("Auto-Plant 🥕")
-SelectedSeed = PlantFolder:CreateDropdown({
-    Name = "Seed",
-    Options = function()
-        local seeds = {}
-        for name,_ in pairs(GetSeedStock()) do
-            table.insert(seeds, name)
-        end
-        return seeds
-    end,
-    CurrentOption = "",
-    Flag = "SelectedSeed",
-    Callback = function(option) end
-})
-AutoPlant = PlantFolder:CreateToggle({
-    Name = "Enabled",
-    CurrentValue = false,
-    Flag = "AutoPlant"
-})
-AutoPlantRandom = PlantFolder:CreateToggle({
-    Name = "Plant at random points",
-    CurrentValue = false,
-    Flag = "AutoPlantRandom"
-})
-PlantFolder:CreateButton({
-    Name = "Plant all",
-    Callback = AutoPlantLoop
-})
-
--- Auto-Harvest
-local HarvestFolder = Window:CreateTab("Auto-Harvest 🚜")
-AutoHarvest = HarvestFolder:CreateToggle({
-    Name = "Enabled",
-    CurrentValue = false,
-    Flag = "AutoHarvest"
-})
-for key,_ in pairs(HarvestIgnores) do
-    HarvestFolder:CreateToggle({
-        Name = key,
-        CurrentValue = HarvestIgnores[key],
-        Flag = "HarvestIgnore_"..key,
-        Callback = function(value)
-            HarvestIgnores[key] = value
-        end
-    })
-end
-
 -- Auto-Buy Seeds
-local BuyFolder = Window:CreateTab("Auto-Buy 🥕")
+local BuyFolder = Window:CreateTab("Seeds 🥕")
 AutoBuy = BuyFolder:CreateToggle({
     Name = "Enabled",
     CurrentValue = false,
@@ -284,20 +191,6 @@ BuyFolder:CreateButton({
         end
     end
 })
-
--- Auto-Sell
-local SellFolder = Window:CreateTab("Auto-Sell 💰")
-AutoSell = SellFolder:CreateToggle({Name="Enabled", CurrentValue=false, Flag="AutoSell"})
-SellThreshold = SellFolder:CreateSlider({Name="Crops threshold", Min=1, Max=199, CurrentValue=15, Flag="SellThreshold"})
-SellFolder:CreateButton({Name="Sell inventory", Callback=SellInventory})
-
--- Auto-Walk / NoClip
-local WalkFolder = Window:CreateTab("Auto-Walk 🚶")
-AutoWalk = WalkFolder:CreateToggle({Name="Enabled", CurrentValue=false, Flag="AutoWalk"})
-AutoWalkAllowRandom = WalkFolder:CreateToggle({Name="Allow random points", CurrentValue=true, Flag="AutoWalkAllowRandom"})
-NoClip = WalkFolder:CreateToggle({Name="NoClip", CurrentValue=false, Flag="NoClip"})
-AutoWalkMaxWait = WalkFolder:CreateSlider({Name="Max delay", Min=1, Max=120, CurrentValue=10, Flag="AutoWalkMaxWait"})
-AutoWalkStatus = WalkFolder:CreateLabel({Name="Status: None"})
 
 -- Auto-Gear
 local GearFolder = Window:CreateTab("Auto-Gear 🧤")
