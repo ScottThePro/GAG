@@ -489,15 +489,13 @@ PlayerGui.ChildAdded:Connect(function(Child)
     end
 end)
 
---Safari Event code
-
-local EventNode = Window:TreeNode({Title = "Auto-Buy Safari Event 🦒"})
-local SelectedEventItem
+--Safari Event codelocal EventNode = Window:TreeNode({Title = "Auto-Buy Safari Event 🦒"})
+local SelectedEventItems = {} -- now a table for multi-select
 local AutoEventBuy
 
 AutoEventBuy = EventNode:Checkbox({
     Value = false,
-    Label = "Auto Buy Selected Safari Item"
+    Label = "Auto Buy Selected Safari Items"
 })
 
 local function BuyEventItem(ItemName)
@@ -531,23 +529,27 @@ local function GetEventItems(): table
     return items
 end
 
-local function BuySelectedEventItem()
-    if SelectedEventItem.Selected == "Auto Buy All Safari Items" then
+local function BuySelectedEventItems()
+    if SelectedEventItems["Auto Buy All Safari Items"] then
         local items = GetEventItems()
         for _, name in pairs(items) do
             BuyEventItem(name)
             task.wait(0.15)
         end
     else
-        local item = SelectedEventItem.Selected
-        if not item or item == "" then return end
-        BuyEventItem(item)
+        for itemName, selected in pairs(SelectedEventItems) do
+            if selected then
+                BuyEventItem(itemName)
+                task.wait(0.15)
+            end
+        end
     end
 end
 
+-- Multi-select combo
 SelectedEventItem = EventNode:Combo({
-    Label = "Select Safari Item",
-    Selected = "",
+    Label = "Select Safari Items",
+    Selected = {}, -- store selected items
     GetItems = function()
         local list = GetEventItems()
         local ordered = {"Auto Buy All Safari Items"}
@@ -557,24 +559,38 @@ SelectedEventItem = EventNode:Combo({
         return ordered
     end,
     Callback = function(_, selected)
-        if selected == "Auto Buy All Safari Items" then
+        -- toggle selection in table
+        if type(selected) == "table" then
+            SelectedEventItems = {}
+            for _, name in pairs(selected) do
+                SelectedEventItems[name] = true
+            end
+        else
+            -- single selection fallback
+            SelectedEventItems = {}
+            SelectedEventItems[selected] = true
+        end
+
+        -- update checkbox label
+        if SelectedEventItems["Auto Buy All Safari Items"] then
             AutoEventBuy:SetLabel("Auto Buy All Safari Items")
         else
-            AutoEventBuy:SetLabel("Auto Buy Selected Safari Item")
+            AutoEventBuy:SetLabel("Auto Buy Selected Safari Items")
         end
-    end
+    end,
+    MultiSelect = true -- enable multi-select if your UI library supports it
 })
 
 EventNode:Button({
-    Text = "Buy Selected Safari Item",
-    Callback = BuySelectedEventItem
+    Text = "Buy Selected Safari Items",
+    Callback = BuySelectedEventItems
 })
 
 -- Auto loop
 task.spawn(function()
     while task.wait(0.5) do
         if AutoEventBuy.Value then
-            BuySelectedEventItem()
+            BuySelectedEventItems()
         end
     end
 end)
