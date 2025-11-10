@@ -54,7 +54,8 @@ local Window = Rayfield:CreateWindow({
 --// Dicts
 local SeedStock = {}
 local OwnedSeeds = {}
-local thoptions = {"Trowel", "Hoe", "Shovel"} -- this will be changed for auto gear
+local gearptions = {"Trowel", "Hoe", "Shovel"} -- this will be changed for auto gear
+local seedoptions = {"Carrot", "Strawberry", "Blueberry"}
 
 --// Globals
 local SelectedSeedDropdown, SelectedGearDropdown
@@ -133,66 +134,54 @@ local function BuySelectedGear(selectedGears)
     end
 end
 
---// Tabs & Sections
-local TabBuy = Window:CreateTab("Auto Buy", 4483362458)
+-- Auto Buy Tab
+local TabBuy = Window:CreateTab("Auto Buy", 4483362458) -- Title, Image
+
+-- Auto Buy Seed Section
 local SeedSection = TabBuy:CreateSection("Seeds")
 
--- Seed Dropdown
-SelectedSeedDropdown = SeedSection:CreateDropdown({
+local SeedDropdown = SeedSection:CreateDropdown({
     Name = "Select Seeds",
-    Options = {},
+    Options = seedoptions,
     CurrentOption = {"Default"},
     MultipleOptions = true,
     Flag = "autobuyseeddropdown",
-    Callback = function(selectedSeeds)
-        print("Selected seeds:", selectedSeeds)
+    Callback = function(Options)
+        -- Options is a table of selected seeds
     end,
 })
 
--- Auto Buy Seeds Toggle
-AutoBuySeedsToggle = SeedSection:CreateToggle({
+local SeedToggle = SeedSection:CreateToggle({
     Name = "Auto Buy Seeds",
     CurrentValue = false,
     Flag = "autobuyseedtoggle",
     Callback = function(Value)
-        -- Value true/false
+        -- Value is true/false
     end,
 })
 
+-- Auto Buy Gear Section
 local GearSection = TabBuy:CreateSection("Gear")
--- Gear Dropdown
-SelectedGearDropdown = GearSection:CreateDropdown({
+
+local GearDropdown = GearSection:CreateDropdown({
     Name = "Select Gear",
-    Options = {"Auto Buy All Gear", table.unpack(thoptions)},
+    Options = gearoptions,
     CurrentOption = {"Default"},
     MultipleOptions = true,
     Flag = "autobuygeardropdown",
-    Callback = function(selectedGears)
-        print("Selected gear:", selectedGears)
+    Callback = function(Options)
+        -- Options is a table of selected gear
     end,
 })
 
--- Auto Buy Gear Toggle
-AutoBuyGearToggle = GearSection:CreateToggle({
+local GearToggle = GearSection:CreateToggle({
     Name = "Auto Buy Gear",
     CurrentValue = false,
     Flag = "autobuygeartoggle",
     Callback = function(Value)
-        -- Value true/false
+        -- Value is true/false
     end,
 })
-
--- Auto-buy loops
-spawn(function()
-    while task.wait(0.5) do
-        if AutoBuySeedsToggle.CurrentValue then
-            BuySelectedSeeds(SelectedSeedDropdown:Get())
-        end
-        if AutoBuyGearToggle.CurrentValue then
-            BuySelectedGear(SelectedGearDropdown:Get())
-        end
-    end
-end)
 
 -- Update seed dropdown when Seed Shop GUI opens
 PlayerGui.ChildAdded:Connect(function(Child)
