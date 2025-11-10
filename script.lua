@@ -1,5 +1,5 @@
 debugX = true
-
+--1
 local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 
 --// Services
@@ -65,7 +65,7 @@ local SeedDropdown = SeedSection:CreateDropdown({
     Name = "Select Seeds",
     Options = seedoptions,
     CurrentOption = {"Default"},
-    MultipleOptions = true,
+    MultipleOptions = false,
     Flag = "autobuyseeddropdown",
     Callback = function(Options)
         -- Options is a table of selected seeds
@@ -88,7 +88,7 @@ local GearDropdown = GearSection:CreateDropdown({
     Name = "Select Gear",
     Options = gearoptions,
     CurrentOption = {"Default"},
-    MultipleOptions = true,
+    MultipleOptions = false,
     Flag = "autobuygeardropdown",
     Callback = function(Options)
         -- Options is a table of selected gear
