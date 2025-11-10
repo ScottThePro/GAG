@@ -77,19 +77,6 @@ local function GetSeedStock(IgnoreNoStock: boolean?): table
     return IgnoreNoStock and NewList or SeedStock
 end
 
--- Seed Dropdown for Rayfield
-local SeedDropdown = SeedSection:CreateDropdown({
-    Name = "Select Seeds",
-    Options = {}, -- initially empty
-    CurrentOption = {"Default"},
-    MultipleOptions = true,
-    Flag = "autobuyseeddropdown",
-    Callback = function(selectedSeeds)
-        print("Selected seeds:", selectedSeeds)
-        -- selectedSeeds is a table of strings like "Blueberry"
-    end,
-})
-
 -- Function to update dropdown with stock
 local function UpdateSeedDropdown()
     -- Wait for Seed Shop GUI to exist
@@ -131,6 +118,18 @@ local TabBuy = Window:CreateTab("Auto Buy", 4483362458) -- Title, Image
 -- Auto Buy Seed Section
 local SeedSection = TabBuy:CreateSection("Seeds")
 
+-- Seed Dropdown for Rayfield
+local SeedDropdown = SeedSection:CreateDropdown({
+    Name = "Select Seeds",
+    Options = {}, -- initially empty
+    CurrentOption = {"Default"},
+    MultipleOptions = true,
+    Flag = "autobuyseeddropdown",
+    Callback = function(selectedSeeds)
+        print("Selected seeds:", selectedSeeds)
+        -- selectedSeeds is a table of strings like "Blueberry"
+    end,
+})
 local SeedToggle = SeedSection:CreateToggle({
     Name = "Auto Buy Seeds",
     CurrentValue = false,
@@ -162,5 +161,5 @@ local GearToggle = GearSection:CreateToggle({
         -- Value is true/false
     end,
 })
---2
+--3
 Rayfield:LoadConfiguration()
