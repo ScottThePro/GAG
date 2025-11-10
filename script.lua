@@ -77,7 +77,7 @@ end
 -- Function to update dropdown with stock
 local function UpdateSeedDropdown()
     -- Wait for Seed Shop GUI to exist
-    local SeedShop = PlayerGui:WaitForChild("Seed_Shop", 5)
+    local SeedShop = PlayerGui.Seed_Shop
     if not SeedShop then return end
 
     local StockList = GetSeedStock(true) -- true = ignore seeds with 0 stock
