@@ -1,5 +1,5 @@
 debugX = true
---6
+--10
 local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 
 --// Services
@@ -56,10 +56,13 @@ local Window = Rayfield:CreateWindow({
 
 -- seed variables 
 local SelectedSeeds = {}
+local SeedStock = {}
 --Gear variables
 local SelectedGear = {}
+local GearStock = {}
 --Event variables
 local SelectedEventItems = {}
+local EventStock = {}
 --Get Seed Stock Functions
 local function GetSeedStock(IgnoreNoStock: boolean?): table
 	local SeedShop = PlayerGui:FindFirstChild("Seed_Shop")
@@ -78,6 +81,7 @@ local function GetSeedStock(IgnoreNoStock: boolean?): table
 			if main and main:FindFirstChild("Stock_Text") then
 				local stockText = main.Stock_Text.Text
 				local stockCount = tonumber(stockText:match("%d+")) or 0
+				SeedStock[item.Name] = stockCount
 
 				if IgnoreNoStock then
 					if stockCount > 0 then
@@ -114,7 +118,7 @@ local function BuyAllSelectedSeeds()
 
 	-- Loop through each selected seed
 	for _, seedName in ipairs(seedsToBuy) do
-		local stockCount = (SeedOptions and SeedOptions[seedName]) or 1 -- fallback if SeedStock not defined
+		local stockCount = (SeedStock[seedName]) or 1 -- fallback if SeedStock not defined
 		if stockCount and stockCount > 0 then
 			for i = 1, stockCount do
 				BuySeed(seedName)
@@ -144,6 +148,7 @@ local function GetGearStock(IgnoreNoStock: boolean?): table
 			if main and main:FindFirstChild("Stock_Text") then
 				local stockText = main.Stock_Text.Text
 				local stockCount = tonumber(stockText:match("%d+")) or 0
+				GearStock[item.Name] = stockCount
 
 				if IgnoreNoStock then
 					if stockCount > 0 then
@@ -181,7 +186,7 @@ local function BuyAllSelectedGear()
 
 	-- Loop through each selected gear
 	for _, gearName in ipairs(gearToBuy) do
-		local stockCount = (GearOptions and GearOptionsgearName]) or 1 -- fallback if GearStock not defined
+		local stockCount = (GearStock[gearName]) or 1 -- fallback if GearStock not defined
 		if stockCount and stockCount > 0 then
 			for i = 1, stockCount do
 				BuyGear(gearName)
@@ -228,7 +233,7 @@ local SeedOptions = GetSeedStock(false)
 local AutoBuySeeds = false
 --Gear stock
 local GearOptions = GetGearStock(false)
-local AutoBuyGears = false
+local AutoBuyGear = false
 --Safari Event stock
 local EventOptions = GetEventItems()
 local AutoBuyEvent = false
