@@ -1,5 +1,5 @@
 debugX = true
---3
+--1
 
 local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 
@@ -345,16 +345,8 @@ local GearDropdown = AutoBuyTab:CreateDropdown({
 --Auto Buy Event Section
 local AutoBuyEventSection = AutoBuyTab:CreateSection("Event")
 
-local AutoBuyEventToggle = AutoBuyTab:CreateToggle({
-	Name = "Auto Buy Event",
-	CurrentValue = false,
-	Flag = "AutoBuyEventToggle", -- A flag is the identifier for the configuration file, make sure every element has a different flag if you're using configuration saving to ensure no overlaps
-	Callback = function(Value)
-		-- The function that takes place when the toggle is pressed
-    		-- The variable (Value) is a boolean on whether the toggle is true or false
-	end,
-})
---Auto Buy Event Dropdown
+
+--Auto Buy Event toggle
 local AutoBuyEventToggle = AutoBuyTab:CreateToggle({
 	Name = "Auto Buy Event",
 	CurrentValue = false,
@@ -370,6 +362,21 @@ local AutoBuyEventToggle = AutoBuyTab:CreateToggle({
 			end)
 		end
 	end,
+})
+--Auto buy event dropdown
+local AutoBuyEventDropdown = AutoBuyTab:CreateDropdown({
+	Name = "Select Event",
+	Options = GetEventItems(),
+	CurrentOption = {}, -- start empty for multi-select
+	MultipleOptions = true,
+	Flag = "AutoBuyEventGearDropdown",
+	Callback = function(Options)
+    if type(Options) == "table" then
+        SelectedEventItems = Options
+    else
+        SelectedEventItems = {Options}
+    end
+end,
 })
      
 -- Load config new
