@@ -105,6 +105,41 @@ local function GetGearStock(IgnoreNoStock: boolean?): table
 	return IgnoreNoStock and NewList or GearStock
 end
 
+--Get event stock functions
+local function GetEventStock(IgnoreNoStock: boolean?): table
+	local EventShop = PlayerGui:FindFirstChild("EventShop_UI")
+	if not EventShop then return {} end
+
+	local MainFrame = EventShop:FindFirstChild("Frame")
+	if not MainFrame then return {} end
+
+	local ScrollFrame = MainFrame:FindFirstChild("ScrollingFrame")
+	if not ScrollFrame then return {} end
+
+	local NewList = {}
+	for _, Item in pairs(ScrollFrame:GetChildren()) do
+		-- Only count actual item frames (like Baobab)
+		if Item:IsA("Frame") and Item:FindFirstChild("Sheckles_Buy") then
+			local BuyButton = Item.Sheckles_Buy
+			local InStock = BuyButton:FindFirstChild("In_Stock")
+			local NoStock = BuyButton:FindFirstChild("No_Stock")
+
+			-- Check which one is visible
+			local HasStock = false
+			if InStock and InStock.Visible then
+				HasStock = true
+			elseif NoStock and not NoStock.Visible then
+				HasStock = true
+			end
+
+			if not IgnoreNoStock or HasStock then
+				NewList[Item.Name] = HasStock and 1 or 0
+				EventStock[Item.Name] = HasStock and 1 or 0
+			end
+		end
+	end
+	return NewList
+end
 --// Seed stock
 local SeedOptions = {}
 local SeedStockData = GetSeedStock(true) -- ignore no-stock seeds
@@ -116,6 +151,12 @@ local GearOptions = {}
 local GearStockData = GetGearStock(true) -- ignore no-stock gear
 for GearName, _ in pairs(GearStockData) do
 	table.insert(GearOptions, GearName)
+end
+--Safari Event stock
+local EventOptions = {}
+local EventStockData = GetEventStock(true) -- ignore no-stock gear
+for EventName, _ in pairs(EventStockData) do
+	table.insert(EventOptions, EventName)
 end
 
 -- Auto Buy Tab
@@ -171,6 +212,33 @@ local AutoBuyGearDropdown = AutoBuyTab:CreateDropdown({
 		print("Selected Gear:")
 		for _, seed in ipairs(Options) do
 			print(" -", Gear)
+		end
+	end,
+})
+
+--Auto Buy Event Section
+local AutoBuyEventSection = AutoBuyTab:CreateSection("Event")
+
+local AutoBuyGearToggle = AutoBuyTab:CreateToggle({
+	Name = "Auto Buy Event",
+	CurrentValue = false,
+	Flag = "AutoBuyEventToggle", -- A flag is the identifier for the configuration file, make sure every element has a different flag if you're using configuration saving to ensure no overlaps
+	Callback = function(Value)
+		-- The function that takes place when the toggle is pressed
+    		-- The variable (Value) is a boolean on whether the toggle is true or false
+	end,
+})
+--Auto Buy Event Dropdown
+local AutoBuyEventDropdown = AutoBuyTab:CreateDropdown({
+	Name = "Select Event",
+	Options = EventOptions,
+	CurrentOption = {}, -- start empty for multi-select
+	MultipleOptions = true,
+	Flag = "AutoBuyEventGearDropdown",
+	Callback = function(Options)
+		print("Selected Event:")
+		for _, seed in ipairs(Options) do
+			print(" -", Event)
 		end
 	end,
 })
