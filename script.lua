@@ -51,6 +51,10 @@ local Window = Rayfield:CreateWindow({
    }
 })
 
+-- seed variables 
+local SelectedSeeds = {}
+--Gear variables
+local SelectedGear = {}
 --Get Seed Stock Functions
 local function GetSeedStock(IgnoreNoStock: boolean?): table
 	local SeedShop = PlayerGui:FindFirstChild("Seed_Shop")
@@ -80,11 +84,42 @@ local function GetSeedStock(IgnoreNoStock: boolean?): table
 			end
 		end
 	end
-
+	--Sort items alphabetically
 	table.sort(items)
+
+	-- Add "All Seeds" to the top of the list
+	table.insert(items, 1, "All Seeds")
+	
 	return items
 end
 
+--Buy seed function
+local function BuySeed(Seed: string)
+	GameEvents.BuySeedStock:FireServer(Seed)
+end
+local function BuyAllSelectedSeeds()
+	local seedsToBuy = {}
+
+	-- If “All Seeds” was chosen, get the full stock list
+	if table.find(SelectedSeeds, "All Seeds") then
+		seedsToBuy = GetSeedStock(true) -- all seeds that have stock
+	else
+		seedsToBuy = SelectedSeeds
+	end
+
+	-- Loop through each selected seed
+	for _, seedName in ipairs(seedsToBuy) do
+		local stockCount = (SeedStock and SeedStock[seedName]) or 1 -- fallback if SeedStock not defined
+		if stockCount and stockCount > 0 then
+			for i = 1, stockCount do
+				BuySeed(seedName)
+				task.wait(0.1) -- optional slight delay for safety
+			end
+		else
+			--warn("No stock for:", seedName)
+		end
+	end
+end
 
 --Get Gear Stock Functions
 local function GetGearStock(IgnoreNoStock: boolean?): table
@@ -115,11 +150,43 @@ local function GetGearStock(IgnoreNoStock: boolean?): table
 			end
 		end
 	end
-
+	--Sort items alphabetically
 	table.sort(items)
+
+	-- Add "All Gear" to the top of the list
+	table.insert(items, 1, "All Gear")
 	return items
 end
 
+--Buy gear function
+local function BuyGear(GearName)
+    if not GearName or GearName == "" then return end
+    GameEvents.BuyGearStock:FireServer(GearName)
+end
+--Buy all selected gear function
+local function BuyAllSelectedGear()
+	local gearToBuy = {}
+
+	-- If "All Gear" is selected, get full stock
+	if table.find(SelectedGear, "All Gear") then
+		gearToBuy = GetGearStock(true)
+	else
+		gearToBuy = SelectedGear
+	end
+
+	-- Loop through each selected gear
+	for _, gearName in ipairs(gearToBuy) do
+		local stockCount = (GearStock and GearStock[gearName]) or 1 -- fallback if GearStock not defined
+		if stockCount and stockCount > 0 then
+			for i = 1, stockCount do
+				BuyGear(gearName)
+				task.wait(0.1) -- slight delay to prevent spam
+			end
+		else
+			--warn("No stock for:", gearName)
+		end
+	end
+end
 
 --Get event stock functions
 	local function GetEventItems(): table
@@ -143,16 +210,23 @@ end
             end
         end
     end
-    table.sort(items)
+	--Sort items alphabetically
+	table.sort(items)
+
+	-- Add "All Seeds" to the top of the list
+	table.insert(items, 1, "All Event Items")
     return items
 end
 
 --// Stock options for our drop downs
 local SeedOptions = GetSeedStock(false)
+local AutoBuySeeds = false
 --Gear stock
 local GearOptions = GetGearStock(false)
+local AutoBuyGears = false
 --Safari Event stock
 local EventOptions = GetEventItems()
+local AutoBuyEvent = false
 
 -- Auto Buy Tab
 local AutoBuyTab = Window:CreateTab("Auto Buy", 4483362458) -- Title, Image
@@ -165,8 +239,17 @@ local AutoBuySeedToggle = AutoBuyTab:CreateToggle({
 	CurrentValue = false,
 	Flag = "AutoBuySeedToggle", -- A flag is the identifier for the configuration file, make sure every element has a different flag if you're using configuration saving to ensure no overlaps
 	Callback = function(Value)
-		-- The function that takes place when the toggle is pressed
-    		-- The variable (Value) is a boolean on whether the toggle is true or false
+		if AutoBuySeeds then
+			print("Auto Buy started")
+			task.spawn(function()
+				while AutoBuySeeds do
+					BuyAllSelectedSeeds()
+					task.wait(3) -- wait a few seconds between buys to avoid spam
+				end
+			end)
+		else
+			--print("Auto Buy stopped")
+		end
 	end,
 })
 --Auto Buy Seed Dropdown
@@ -177,10 +260,7 @@ local AutoBuySeedDropdown = AutoBuyTab:CreateDropdown({
 	MultipleOptions = true,
 	Flag = "AutoBuySeedDropdown",
 	Callback = function(Options)
-		print("Selected seeds:")
-		for _, seed in ipairs(Options) do
-			print(" -", seed)
-		end
+	
 	end,
 })
 
@@ -192,22 +272,30 @@ local AutoBuyGearToggle = AutoBuyTab:CreateToggle({
 	CurrentValue = false,
 	Flag = "AutoBuyGearToggle", -- A flag is the identifier for the configuration file, make sure every element has a different flag if you're using configuration saving to ensure no overlaps
 	Callback = function(Value)
-		-- The function that takes place when the toggle is pressed
-    		-- The variable (Value) is a boolean on whether the toggle is true or false
-	end,
-})
---Auto Buy Gear Dropdown
-local AutoBuyGearDropdown = AutoBuyTab:CreateDropdown({
-	Name = "Select Gear",
-	Options = GearOptions,
-	CurrentOption = {}, -- start empty for multi-select
-	MultipleOptions = true,
-	Flag = "AutoBuyGearDropdown",
-	Callback = function(Options)
-		print("Selected Gear:")
-		for _, seed in ipairs(Options) do
-			print(" -", Gear)
+		AutoBuyGear = Value
+		if AutoBuyGear then
+			task.spawn(function()
+				while AutoBuyGear do
+					BuyAllSelectedGear()
+					task.wait(3) -- delay between purchases
+				end
+			end)
 		end
+	end,
+--Auto Buy Gear Dropdown
+local GearDropdown = AutoBuyTab:CreateDropdown({
+	Name = "Select Gear",
+	Options = GetGearStock(true),
+	CurrentOption = {"All Gear"},
+	MultipleOptions = true, -- only if your Rayfield supports it
+	Flag = "GearStockDropdown",
+	Callback = function(Options)
+		if type(Options) == "table" then
+			SelectedGear = Options
+		else
+			SelectedGear = {Options}
+		end
+		--print("Selected Gear:", table.concat(SelectedGear, ", "))
 	end,
 })
 
@@ -231,10 +319,7 @@ local AutoBuyEventDropdown = AutoBuyTab:CreateDropdown({
 	MultipleOptions = true,
 	Flag = "AutoBuyEventGearDropdown",
 	Callback = function(Options)
-		print("Selected Event:")
-		for _, seed in ipairs(Options) do
-			print(" -", Event)
-		end
+		
 	end,
 })
      
