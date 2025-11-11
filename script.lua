@@ -1,5 +1,5 @@
 debugX = true
---2
+--3
 
 local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 
@@ -107,7 +107,7 @@ end
 
 --Buy seed function
 local function BuySeed(Seed: string)
-	GameEvents.BuySeedStock:FireServer(Seed)
+	GameEvents.BuySeedStock:FireServer("Shop", Seed)
 end
 local function BuyAllSelectedSeeds()
 	local seedsToBuy = {}
@@ -231,14 +231,38 @@ local function GetEventItems(): table
     return items
 end
 
---// Stock options for our drop downs
-local SeedOptions = GetSeedStock(false)
+--Buy event items functions 
+-- Function to buy a single event shop item
+local function BuyEventItem(ItemName, ShopName)
+    if not ItemName or ItemName == "" then return end
+    -- Fire the remote to purchase the item
+    game:GetService("ReplicatedStorage").GameEvents.BuyEventShopStock:FireServer(ItemName, ShopName)
+end
+
+-- Function to buy all selected event shop items
+local function BuyAllSelectedEventItems()
+    local itemsToBuy = {}
+
+    -- If "All Event Items" is selected, get the full stock list
+    if table.find(SelectedEventItems, "All Event Items") then
+        itemsToBuy = GetEventItems() -- fetch all event shop items
+    else
+        itemsToBuy = SelectedEventItems
+    end
+
+    -- Loop through each item and buy it
+    for _, itemName in ipairs(itemsToBuy) do
+        if itemName ~= "All Event Items" then -- skip placeholder
+            BuyEventItem(itemName, "Safari Shop") -- replace "Safari Shop" with your shop name if needed
+            task.wait(0.2) -- slight delay to avoid spamming the server
+        end
+    end
+end
+--// Stock options for our drop down
 local AutoBuySeeds = false
 --Gear stock
-local GearOptions = GetGearStock(false)
 local AutoBuyGear = false
 --Safari Event stock
-local EventOptions = GetEventItems()
 local AutoBuyEvent = false
 
 -- Auto Buy Tab
@@ -269,7 +293,7 @@ local AutoBuySeedToggle = AutoBuyTab:CreateToggle({
 --Auto Buy Seed Dropdown
 local AutoBuySeedDropdown = AutoBuyTab:CreateDropdown({
 	Name = "Select Seeds",
-	Options = SeedOptions,
+	Options = GetSeedStock(false),
 	CurrentOption = {}, -- start empty for multi-select
 	MultipleOptions = true,
 	Flag = "AutoBuySeedDropdown",
@@ -304,7 +328,7 @@ local AutoBuyGearToggle = AutoBuyTab:CreateToggle({
 --Auto Buy Gear Dropdown
 local GearDropdown = AutoBuyTab:CreateDropdown({
 	Name = "Select Gear",
-	Options = GetGearStock(true),
+	Options = GetGearStock(false),
 	CurrentOption = {"All Gear"},
 	MultipleOptions = true, -- only if your Rayfield supports it
 	Flag = "GearStockDropdown",
@@ -331,19 +355,21 @@ local AutoBuyEventToggle = AutoBuyTab:CreateToggle({
 	end,
 })
 --Auto Buy Event Dropdown
-local AutoBuyEventDropdown = AutoBuyTab:CreateDropdown({
-	Name = "Select Event",
-	Options = EventOptions,
-	CurrentOption = {}, -- start empty for multi-select
-	MultipleOptions = true,
-	Flag = "AutoBuyEventGearDropdown",
-	Callback = function(Options)
-    if type(Options) == "table" then
-        SelectedEventItems = Options
-    else
-        SelectedEventItems = {Options}
-    end
-end,
+local AutoBuyEventToggle = AutoBuyTab:CreateToggle({
+	Name = "Auto Buy Event",
+	CurrentValue = false,
+	Flag = "AutoBuyEventToggle",
+	Callback = function(Value)
+		AutoBuyEvent = Value
+		if AutoBuyEvent then
+			task.spawn(function()
+				while AutoBuyEvent do
+					BuyAllSelectedEventItems() -- calls our auto-buy function
+					task.wait(3) -- wait a few seconds between buys
+				end
+			end)
+		end
+	end,
 })
      
 -- Load config new
