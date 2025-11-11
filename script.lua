@@ -1,5 +1,5 @@
 tdebugX = true
---2
+--1
 local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 
 --// Services
@@ -232,13 +232,10 @@ end
 end
 
 --// Stock options for our drop downs
-local SeedOptions = GetSeedStock(false)
 local AutoBuySeeds = false
 --Gear stock
-local GearOptions = GetGearStock(false)
 local AutoBuyGear = false
---Safari Event stock
-local EventOptions = GetEventItems()
+--Safari Event 
 local AutoBuyEvent = false
 
 -- Auto Buy Tab
