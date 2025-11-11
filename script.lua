@@ -1,5 +1,5 @@
 debugX = true
---2
+--4
 local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 
 --// Services
@@ -16,6 +16,9 @@ local PlayerGui = LocalPlayer.PlayerGui
 
 local ShecklesCount = Leaderstats.Sheckles
 local GameInfo = MarketplaceService:GetProductInfo(game.PlaceId)
+--// Folders
+local GameEvents = ReplicatedStorage.GameEvents
+local Farms = workspace.Farm
 
 local Window = Rayfield:CreateWindow({
    Name = GameInfo.Name .. " : Cheat Engine",
@@ -53,8 +56,10 @@ local Window = Rayfield:CreateWindow({
 
 -- seed variables 
 local SelectedSeeds = {}
+local SeedStock = {}
 --Gear variables
 local SelectedGear = {}
+local GearStock = {}
 --Get Seed Stock Functions
 local function GetSeedStock(IgnoreNoStock: boolean?): table
 	local SeedShop = PlayerGui:FindFirstChild("Seed_Shop")
@@ -261,8 +266,12 @@ local AutoBuySeedDropdown = AutoBuyTab:CreateDropdown({
 	MultipleOptions = true,
 	Flag = "AutoBuySeedDropdown",
 	Callback = function(Options)
-	
-	end,
+    if type(Options) == "table" then
+        SelectedSeeds = Options
+    else
+        SelectedSeeds = {Options}
+    end
+end,
 })
 
 --Auto Buy Gear Section
@@ -320,8 +329,12 @@ local AutoBuyEventDropdown = AutoBuyTab:CreateDropdown({
 	MultipleOptions = true,
 	Flag = "AutoBuyEventGearDropdown",
 	Callback = function(Options)
-		
-	end,
+    if type(Options) == "table" then
+        SelectedEventItems = Options
+    else
+        SelectedEventItems = {Options}
+    end
+end,
 })
      
 
