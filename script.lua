@@ -1,5 +1,5 @@
 debugX = true
---1
+--100
 
 local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 
@@ -61,7 +61,10 @@ local SelectedSeeds = {}
 local SeedStock = {}
 --Gear variables
 local SelectedGear = {}
-local GearStock = {}
+local GearStock = {}{}
+--Egg variables
+local SelectedEggs = {}
+local EggsStock = {}
 --Event variables
 local SelectedEventItems = {}
 local EventStock = {}
@@ -201,6 +204,66 @@ local function BuyAllSelectedGear()
 	end
 end
 
+--pet egg stock functions -- Get pet/egg stock functions
+local function GetEggs(): table
+    local petShop = PlayerGui:FindFirstChild("PetShop_UI") -- updated name
+    if not petShop then return {} end
+
+    local mainFrame = petShop:FindFirstChild("Frame")
+    if not mainFrame then return {} end
+
+    local scroll = mainFrame:FindFirstChild("ScrollingFrame")
+    if not scroll then return {} end
+
+    local eggs = {}
+    for _, child in pairs(scroll:GetChildren()) do
+        if child:IsA("Frame") then
+            local name = child.Name
+            if not name:match("_Padding") 
+               and not name:match("ItemPadding")
+               and not name:match("UI")
+               and not name:match("Layout")
+            then
+                table.insert(eggs, name)
+            end
+        end
+    end
+
+    -- Sort eggs alphabetically
+    table.sort(eggs)
+
+    -- Add "All Eggs" to the top of the list
+    table.insert(eggs, 1, "All Eggs")
+    return eggs
+end
+
+-- Buy egg function
+local function BuyEgg(EggName)
+    if not EggName or EggName == "" then return end
+    -- Fire the remote to purchase the egg
+    game:GetService("ReplicatedStorage").GameEvents.BuyPetEgg:FireServer(EggName)
+end
+
+-- Function to buy all selected eggs
+local function BuyAllSelectedEggs()
+    local eggsToBuy = {}
+
+    -- If "All Eggs" is selected, get the full egg list
+    if table.find(SelectedEggs, "All Eggs") then
+        eggsToBuy = GetEggs()
+    else
+        eggsToBuy = SelectedEggs
+    end
+
+    -- Loop through each egg and buy it
+    for _, eggName in ipairs(eggsToBuy) do
+        if eggName ~= "All Eggs" then
+            BuyEgg(eggName)
+            task.wait(0.2) -- slight delay to avoid spamming the server
+        end
+    end
+end
+
 --Get event stock functions
 local function GetEventItems(): table
     local eventShop = PlayerGui:FindFirstChild("EventShop_UI")
@@ -264,6 +327,8 @@ local AutoBuySeeds = false
 local AutoBuyGear = false
 --Safari Event stock
 local AutoBuyEvent = false
+--Egg stock
+local AutoBuyEggs = false
 
 -- Auto Buy Tab
 local AutoBuyTab = Window:CreateTab("Auto Buy", 4483362458) -- Title, Image
@@ -278,7 +343,6 @@ local AutoBuySeedToggle = AutoBuyTab:CreateToggle({
 	Callback = function(Value)
     AutoBuySeeds = Value
 		if AutoBuySeeds then
-			print("Auto Buy started")
 			task.spawn(function()
 				while AutoBuySeeds do
 					BuyAllSelectedSeeds()
@@ -340,6 +404,43 @@ local GearDropdown = AutoBuyTab:CreateDropdown({
 		end
 		--print("Selected Gear:", table.concat(SelectedGear, ", "))
 	end,
+})
+
+--Auto Buy Egg Section
+local AutoBuyEggSection = AutoBuyTab:CreateSection("Eggs")
+--Auto Buy Egg Toggle
+local AutoBuyEggToggle = AutoBuyTab:CreateToggle({
+	Name = "Auto Buy Eggs",
+	CurrentValue = false,
+	Flag = "AutoBuyEggToggle", -- A flag is the identifier for the configuration file, make sure every element has a different flag if you're using configuration saving to ensure no overlaps
+	Callback = function(Value)
+    AutoBuyEggs = Value
+		if AutoBuyEggs 
+			task.spawn(function()
+				while AutoBuyEggs do
+					BuyAllSelectedEggs()
+					task.wait(3) -- wait a few seconds between buys to avoid spam
+				end
+			end)
+		else
+			--print("Auto Buy stopped")
+		end
+	end
+})
+--Auto Buy Egg Dropdown
+local AutoBuyEggDropdown = AutoBuyTab:CreateDropdown({
+	Name = "Select Eggs",
+	Options = GetEggs(),
+	CurrentOption = {}, -- start empty for multi-select
+	MultipleOptions = true,
+	Flag = "AutoBuyEggDropdown",
+	Callback = function(Options)
+    if type(Options) == "table" then
+        SelectedEggs = Options
+    else
+        SelectedEggs = {Options}
+    end
+end,
 })
 
 --Auto Buy Event Section
