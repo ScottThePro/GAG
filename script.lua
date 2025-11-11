@@ -219,7 +219,7 @@ local AutoBuyGearDropdown = AutoBuyTab:CreateDropdown({
 --Auto Buy Event Section
 local AutoBuyEventSection = AutoBuyTab:CreateSection("Event")
 
-local AutoBuyGearToggle = AutoBuyTab:CreateToggle({
+local AutoBuyEventToggle = AutoBuyTab:CreateToggle({
 	Name = "Auto Buy Event",
 	CurrentValue = false,
 	Flag = "AutoBuyEventToggle", -- A flag is the identifier for the configuration file, make sure every element has a different flag if you're using configuration saving to ensure no overlaps
