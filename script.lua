@@ -1,5 +1,5 @@
 debugX = true
---11
+--1
 
 local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 
@@ -113,28 +113,33 @@ local function BuySeed(Seed: string)
 	GameEvents.BuySeedStock:FireServer("Shop", Seed)
 end
 local function BuyAllSelectedSeeds()
-	local seedsToBuy = {}
+    local seedsToBuy = {}
 
-	-- If “All Seeds” was chosen, get the full stock list
-	if table.find(SelectedSeeds, "All Seeds") then
-		seedsToBuy = GetSeedStock(true) -- all seeds that have stock
-	else
-		seedsToBuy = SelectedSeeds
-	end
+    -- If "All Seeds" was chosen, get the full stock list with stock > 0
+    if table.find(SelectedSeeds, "All Seeds") then
+        seedsToBuy = GetSeedStock(true) -- only seeds with stock
+    else
+        -- Only keep selected seeds that have stock
+        for _, seedName in ipairs(SelectedSeeds) do
+            local stockCount = SeedStock[seedName] or 0
+            if stockCount > 0 then
+                table.insert(seedsToBuy, seedName)
+            end
+        end
+    end
 
-	-- Loop through each selected seed
-	for _, seedName in ipairs(seedsToBuy) do
-		local stockCount = (SeedStock[seedName]) or 1 -- fallback if SeedStock not defined
-		if stockCount and stockCount > 0 then
-			for i = 1, stockCount do
-				BuySeed(seedName)
-				task.wait(0.1) -- optional slight delay for safety
-			end
-		else
-			--warn("No stock for:", seedName)
-		end
-	end
+    -- Loop through each selected seed and buy according to its stock
+    for _, seedName in ipairs(seedsToBuy) do
+        local stockCount = SeedStock[seedName] or 0
+        if stockCount > 0 then
+            for i = 1, stockCount do
+                BuySeed(seedName)
+                task.wait(0.1) -- slight delay for safety
+            end
+        end
+    end
 end
+
 
 --Get Gear Stock Functions
 local function GetGearStock(IgnoreNoStock: boolean?): table
@@ -181,28 +186,30 @@ local function BuyGear(GearName)
 end
 --Buy all selected gear function
 local function BuyAllSelectedGear()
-	local gearToBuy = {}
+    local gearToBuy = {}
 
-	-- If "All Gear" is selected, get full stock
-	if table.find(SelectedGear, "All Gear") then
-		gearToBuy = GetGearStock(true)
-	else
-		gearToBuy = SelectedGear
-	end
+    if table.find(SelectedGear, "All Gear") then
+        gearToBuy = GetGearStock(true)
+    else
+        for _, gearName in ipairs(SelectedGear) do
+            local stockCount = GearStock[gearName] or 0
+            if stockCount > 0 then
+                table.insert(gearToBuy, gearName)
+            end
+        end
+    end
 
-	-- Loop through each selected gear
-	for _, gearName in ipairs(gearToBuy) do
-		local stockCount = (GearStock[gearName]) or 1 -- fallback if GearStock not defined
-		if stockCount and stockCount > 0 then
-			for i = 1, stockCount do
-				BuyGear(gearName)
-				task.wait(0.1) -- slight delay to prevent spam
-			end
-		else
-			--warn("No stock for:", gearName)
-		end
-	end
+    for _, gearName in ipairs(gearToBuy) do
+        local stockCount = GearStock[gearName] or 0
+        if stockCount > 0 then
+            for i = 1, stockCount do
+                BuyGear(gearName)
+                task.wait(0.1)
+            end
+        end
+    end
 end
+
 
 --pet egg stock functions -- Get pet/egg stock functions
 local function GetEggs(): table
@@ -306,21 +313,50 @@ end
 local function BuyAllSelectedEventItems()
     local itemsToBuy = {}
 
-    -- If "All Event Items" is selected, get the full stock list
     if table.find(SelectedEventItems, "All Event Items") then
-        itemsToBuy = GetEventItems() -- fetch all event shop items
+        itemsToBuy = GetEventItems()
     else
-        itemsToBuy = SelectedEventItems
+        for _, itemName in ipairs(SelectedEventItems) do
+            local stockCount = EventStock[itemName] or 1 -- fallback
+            if stockCount > 0 then
+                table.insert(itemsToBuy, itemName)
+            end
+        end
     end
 
-    -- Loop through each item and buy it
     for _, itemName in ipairs(itemsToBuy) do
-        if itemName ~= "All Event Items" then -- skip placeholder
-            BuyEventItem(itemName, "Safari Shop") -- replace "Safari Shop" with your shop name if needed
-            task.wait(0.2) -- slight delay to avoid spamming the server
+        if itemName ~= "All Event Items" then
+            BuyEventItem(itemName, "Safari Shop")
+            task.wait(0.2)
         end
     end
 end
+
+--submit event functions 
+-- Function to submit all Safari Event rewards
+local function SubmitAllSafariEvent()
+    local player = Players.LocalPlayer
+    if not player then return end
+
+    local success, err = pcall(function()
+        ReplicatedStorage.GameEvents.SafariEvent.Safari_SubmitAllRE:FireServer(player)
+    end)
+
+    if not success then
+        warn("Failed to submit Safari Event:", err)
+    end
+end
+
+-- Auto-submit loop
+local function AutoSubmitSafariEventLoop()
+    task.spawn(function()
+        while AutoSubmitEvent do
+            SubmitAllSafariEvent()
+            task.wait(3) -- wait 3 seconds between submissions to avoid spam
+        end
+    end)
+end
+
 --// Stock options for our drop down
 local AutoBuySeeds = false
 --Gear stock
@@ -329,6 +365,8 @@ local AutoBuyGear = false
 local AutoBuyEvent = false
 --Egg stock
 local AutoBuyEggs = false
+--Event Submit
+local AutoSubmitEvent = false
 
 -- Auto Buy Tab
 local AutoBuyTab = Window:CreateTab("Auto Buy", 4483362458) -- Title, Image
@@ -478,6 +516,24 @@ local AutoBuyEventDropdown = AutoBuyTab:CreateDropdown({
         SelectedEventItems = {Options}
     end
 end,
+})
+
+-- Event
+local EventTab = Window:CreateTab("Event", 4483362458) -- Title, Image
+--Auto Buy Event Section
+local EventSection = EventTab:CreateSection("Safari Event")
+--Auto Buy Event toggle
+--// Auto-Submit Toggle
+local AutoSubmitEventToggle = AutoBuyTab:CreateToggle({
+    Name = "Auto Submit Safari Event",
+    CurrentValue = false,
+    Flag = "AutoSubmitEventToggle",
+    Callback = function(Value)
+        AutoSubmitEvent = Value
+        if AutoSubmitEvent then
+            AutoSubmitSafariEventLoop()
+        end
+    end
 })
      
 -- Load config new
