@@ -1,8 +1,8 @@
 debugX = true
---1
+--2
 local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 
---// Services 1
+--// Services
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local InsertService = game:GetService("InsertService")
 local MarketplaceService = game:GetService("MarketplaceService")
@@ -239,6 +239,7 @@ local AutoBuySeedToggle = AutoBuyTab:CreateToggle({
 	CurrentValue = false,
 	Flag = "AutoBuySeedToggle", -- A flag is the identifier for the configuration file, make sure every element has a different flag if you're using configuration saving to ensure no overlaps
 	Callback = function(Value)
+    AutoBuySeeds = Value
 		if AutoBuySeeds then
 			print("Auto Buy started")
 			task.spawn(function()
