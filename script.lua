@@ -52,31 +52,64 @@ local Window = Rayfield:CreateWindow({
 })
 
 --// Dicts
-local gearptions = {"Trowel", "Hoe", "Shovel"} -- this will be changed for auto gear
-local seedoptions = {"Carrot", "Strawberry", "Blueberry"}
+local GearOptions = {"Trowel", "Hoe", "Shovel"} -- this will be changed for auto gear
+local SeedOptions = {"Carrot", "Strawberry", "Blueberry"}
 
 -- Auto Buy Tab
 local AutoBuyTab = Window:CreateTab("Auto Buy", 4483362458) -- Title, Image
 
+--Auto Buy Seed Section
 local AutoBuySeedSection = AutoBuyTab:CreateSection("Seeds")
-
+--Auto Buy Seed Toggle
 local AutoBuySeedToggle = AutoBuyTab:CreateToggle({
 	Name = "Auto Buy Seeds",
 	CurrentValue = false,
-	Flag = "Toggle1", -- A flag is the identifier for the configuration file, make sure every element has a different flag if you're using configuration saving to ensure no overlaps
+	Flag = "AutoBuySeedToggle", -- A flag is the identifier for the configuration file, make sure every element has a different flag if you're using configuration saving to ensure no overlaps
 	Callback = function(Value)
 		-- The function that takes place when the toggle is pressed
     		-- The variable (Value) is a boolean on whether the toggle is true or false
 	end,
 })
+--Auto Buy Seed Dropdown
 local AutoBuySeedDropdown = AutoBuyTab:CreateDropdown({
 	Name = "Select Seeds",
 	Options = SeedOptions,
-	CurrentOption = "Option 1",
+	CurrentOption = "Carrot",
+	MultipleOptions = true,
 	Flag = "AutoBuySeedDropdown", -- A flag is the identifier for the configuration file, make sure every element has a different flag if you're using configuration saving to ensure no overlaps
-	Callback = function(Option)
-	  	  -- The function that takes place when the selected option is changed
-    	  -- The variable (Option) is a string for the value that the dropdown was changed to
+	Callback = function(Options)
+		-- Options will be a table of all currently selected items
+		print("Selected seeds:")
+		for _, seed in ipairs(Options) do
+			print(" -", seed)
+		end
+	end,
+})
+
+--Auto Buy Gear Section
+local AutoBuyGearSection = AutoBuyTab:CreateSection("Gear")
+
+local AutoBuyGearToggle = AutoBuyTab:CreateToggle({
+	Name = "Auto Buy Gear",
+	CurrentValue = false,
+	Flag = "AutoBuyGearToggle", -- A flag is the identifier for the configuration file, make sure every element has a different flag if you're using configuration saving to ensure no overlaps
+	Callback = function(Value)
+		-- The function that takes place when the toggle is pressed
+    		-- The variable (Value) is a boolean on whether the toggle is true or false
+	end,
+})
+local AutoBuyGearDropdown = AutoBuyTab:CreateDropdown({
+	Name = "Select Gear",
+	Options = GearOptions,
+	CurrentOption = "Trowel",
+	MultipleOptions = true,
+	Flag = "AutoBuyGearDropdown", -- A flag is the identifier for the configuration file, make sure every element has a different flag if you're using configuration saving to ensure no overlaps
+	Callback = function(Options)
+		-- Options will be a table of all currently selected items
+		print("Selected Gear:")
+		for _, seed in ipairs(Options) do
+			print(" -", Gear)
+		end
 	end,
 })
      
