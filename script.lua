@@ -1,5 +1,5 @@
 debugX = true
---100
+--11
 
 local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 
@@ -61,7 +61,7 @@ local SelectedSeeds = {}
 local SeedStock = {}
 --Gear variables
 local SelectedGear = {}
-local GearStock = {}{}
+local GearStock = {}
 --Egg variables
 local SelectedEggs = {}
 local EggsStock = {}
@@ -409,24 +409,24 @@ local GearDropdown = AutoBuyTab:CreateDropdown({
 --Auto Buy Egg Section
 local AutoBuyEggSection = AutoBuyTab:CreateSection("Eggs")
 --Auto Buy Egg Toggle
+--Auto Buy Egg Toggle
 local AutoBuyEggToggle = AutoBuyTab:CreateToggle({
 	Name = "Auto Buy Eggs",
 	CurrentValue = false,
-	Flag = "AutoBuyEggToggle", -- A flag is the identifier for the configuration file, make sure every element has a different flag if you're using configuration saving to ensure no overlaps
+	Flag = "AutoBuyEggToggle",
 	Callback = function(Value)
-    AutoBuyEggs = Value
-		if AutoBuyEggs 
+		AutoBuyEggs = Value
+		if AutoBuyEggs then
 			task.spawn(function()
 				while AutoBuyEggs do
 					BuyAllSelectedEggs()
-					task.wait(3) -- wait a few seconds between buys to avoid spam
+					task.wait(3)
 				end
 			end)
-		else
-			--print("Auto Buy stopped")
 		end
 	end
 })
+
 --Auto Buy Egg Dropdown
 local AutoBuyEggDropdown = AutoBuyTab:CreateDropdown({
 	Name = "Select Eggs",
