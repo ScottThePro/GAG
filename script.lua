@@ -81,7 +81,7 @@ end
 --Get Gear Stock Functions
 local function GetGearStock(IgnoreNoStock: boolean?): table
 	local GearShop = PlayerGui:WaitForChild("Gear_Shop")
-	local Items = SeedShop:FindFirstChild("Trowel", true).Parent
+	local Items = GearShop:FindFirstChild("Trowel", true).Parent
 
 	local GearStock = {}
 	local NewList = {}
