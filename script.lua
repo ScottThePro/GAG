@@ -1,5 +1,5 @@
 tdebugX = true
---1
+--2
 local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 
 --// Services
@@ -268,19 +268,24 @@ local AutoBuySeedToggle = AutoBuyTab:CreateToggle({
 })
 --Auto Buy Seed Dropdown
 local AutoBuySeedDropdown = AutoBuyTab:CreateDropdown({
-	Name = "Select Seeds",
-	Options = SeedOptions,
-	CurrentOption = {}, -- start empty for multi-select
-	MultipleOptions = true,
-	Flag = "AutoBuySeedDropdown",
-	Callback = function(Options)
-    if type(Options) == "table" then
-        SelectedSeeds = Options
-    else
-        SelectedSeeds = {Options}
-    end
-end,
+    Name = "Select Seeds",
+    CurrentOption = {"All Seeds"},
+    MultipleOptions = true,
+    Flag = "AutoBuySeedDropdown",
+    GetItems = function()
+        local stock = GetSeedStock(true)
+        table.insert(stock, 1, "All Seeds")
+        return stock
+    end,
+    Callback = function(Options)
+        if type(Options) == "table" then
+            SelectedSeeds = Options
+        else
+            SelectedSeeds = {Options}
+        end
+    end,
 })
+
 
 --Auto Buy Gear Section
 local AutoBuyGearSection = AutoBuyTab:CreateSection("Gear")
@@ -308,6 +313,11 @@ local GearDropdown = AutoBuyTab:CreateDropdown({
 	CurrentOption = {"All Gear"},
 	MultipleOptions = true, -- only if your Rayfield supports it
 	Flag = "GearStockDropdown",
+	GetItems = function()
+        local stock = GetGearStock(true) -- refreshes stock dynamically
+        table.insert(stock, 1, "All Gear") -- keep "All Gear" at top
+    return stock
+    end,
 	Callback = function(Options)
 		if type(Options) == "table" then
 			SelectedGear = Options
@@ -331,19 +341,24 @@ local AutoBuyEventToggle = AutoBuyTab:CreateToggle({
 	end,
 })
 --Auto Buy Event Dropdown
+
 local AutoBuyEventDropdown = AutoBuyTab:CreateDropdown({
-	Name = "Select Event",
-	Options = EventOptions,
-	CurrentOption = {}, -- start empty for multi-select
-	MultipleOptions = true,
-	Flag = "AutoBuyEventDropdown",
-	Callback = function(Options)
-    if type(Options) == "table" then
-        SelectedEventItems = Options
-    else
-        SelectedEventItems = {Options}
-    end
-end,
+    Name = "Select Event",
+    CurrentOption = {"All Event Items"},
+    MultipleOptions = true,
+    Flag = "AutoBuyEventDropdown",
+    GetItems = function()
+        local stock = GetEventItems()
+        table.insert(stock, 1, "All Event Items")
+        return stock
+    end,
+    Callback = function(Options)
+        if type(Options) == "table" then
+            SelectedEventItems = Options
+        else
+            SelectedEventItems = {Options}
+        end
+    end,
 })
      
 
