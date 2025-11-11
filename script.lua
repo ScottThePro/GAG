@@ -78,14 +78,44 @@ local function GetSeedStock(IgnoreNoStock: boolean?): table
 	return IgnoreNoStock and NewList or SeedStock
 end
 
---// Dicts
-local GearOptions = {"Trowel", "Hoe", "Shovel"} -- this will be changed for auto gear
---// Build dropdown options dynamically
+--Get Gear Stock Functions
+local function GetGearStock(IgnoreNoStock: boolean?): table
+	local GearShop = PlayerGui:WaitForChild("Gear_Shop")
+	local Items = SeedShop:FindFirstChild("Trowel", true).Parent
+
+	local GearStock = {}
+	local NewList = {}
+
+	for _, Item in next, Items:GetChildren() do
+		local MainFrame = Item:FindFirstChild("Main_Frame")
+		if not MainFrame then continue end
+
+		local StockText = MainFrame:FindFirstChild("Stock_Text") and MainFrame.Stock_Text.Text or ""
+		local StockCount = tonumber(StockText:match("%d+")) or 0
+
+		if IgnoreNoStock then
+			if StockCount > 0 then
+				NewList[Item.Name] = StockCount
+			end
+		else
+			GearStock[Item.Name] = StockCount
+		end
+	end
+
+	return IgnoreNoStock and NewList or SeedStock
+end
+
+--// Seed stock
 local SeedOptions = {}
 local SeedStockData = GetSeedStock(true) -- ignore no-stock seeds
-
 for SeedName, _ in pairs(SeedStockData) do
 	table.insert(SeedOptions, SeedName)
+end
+--Gear stock
+local GearOptions = {}
+local GearStockData = GetGearStock(true) -- ignore no-stock gear
+for GearName, _ in pairs(GearStockData) do
+	table.insert(GearOptions, GearName)
 end
 
 -- Auto Buy Tab
@@ -130,14 +160,14 @@ local AutoBuyGearToggle = AutoBuyTab:CreateToggle({
     		-- The variable (Value) is a boolean on whether the toggle is true or false
 	end,
 })
+--Auto Buy Gear Dropdown
 local AutoBuyGearDropdown = AutoBuyTab:CreateDropdown({
 	Name = "Select Gear",
 	Options = GearOptions,
-	CurrentOption = "Trowel",
+	CurrentOption = {}, -- start empty for multi-select
 	MultipleOptions = true,
-	Flag = "AutoBuyGearDropdown", -- A flag is the identifier for the configuration file, make sure every element has a different flag if you're using configuration saving to ensure no overlaps
+	Flag = "AutoBuyGearDropdown",
 	Callback = function(Options)
-		-- Options will be a table of all currently selected items
 		print("Selected Gear:")
 		for _, seed in ipairs(Options) do
 			print(" -", Gear)
