@@ -2,7 +2,7 @@ debugX = true
 --1
 local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 
---// Services
+--// Services 1
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local InsertService = game:GetService("InsertService")
 local MarketplaceService = game:GetService("MarketplaceService")
@@ -102,7 +102,7 @@ local function GetGearStock(IgnoreNoStock: boolean?): table
 		end
 	end
 
-	return IgnoreNoStock and NewList or SeedStock
+	return IgnoreNoStock and NewList or GearStock
 end
 
 --// Seed stock
