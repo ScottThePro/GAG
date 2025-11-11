@@ -1,5 +1,5 @@
-debugX = true
---10
+tdebugX = true
+--1
 local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 
 --// Services
@@ -25,7 +25,7 @@ local Window = Rayfield:CreateWindow({
    Icon = 0, -- Icon in Topbar. Can use Lucide Icons (string) or Roblox Image (number). 0 to use no icon (default).
    LoadingTitle = "GAG Cheat Engine",
    LoadingSubtitle = "by noone",
-   Theme = "Serenity", -- Check https://docs.sirius.menu/rayfield/configuration/themes
+   Theme = "Default", -- Check https://docs.sirius.menu/rayfield/configuration/themes
 
    DisableRayfieldPrompts = false,
    DisableBuildWarnings = false, -- Prevents Rayfield from warning when the script has a version mismatch with the interface
@@ -107,28 +107,31 @@ local function BuySeed(Seed: string)
 	GameEvents.BuySeedStock:FireServer(Seed)
 end
 local function BuyAllSelectedSeeds()
-	local seedsToBuy = {}
+    -- Refresh seed stock first
+    GetSeedStock(true)
 
-	-- If “All Seeds” was chosen, get the full stock list
-	if table.find(SelectedSeeds, "All Seeds") then
-		seedsToBuy = GetSeedStock(true) -- all seeds that have stock
-	else
-		seedsToBuy = SelectedSeeds
-	end
+    local seedsToBuy = {}
 
-	-- Loop through each selected seed
-	for _, seedName in ipairs(seedsToBuy) do
-		local stockCount = (SeedStock[seedName]) or 1 -- fallback if SeedStock not defined
-		if stockCount and stockCount > 0 then
-			for i = 1, stockCount do
-				BuySeed(seedName)
-				task.wait(0.1) -- optional slight delay for safety
-			end
-		else
-			--warn("No stock for:", seedName)
-		end
-	end
+    if table.find(SelectedSeeds, "All Seeds") then
+        seedsToBuy = GetSeedStock(true) -- get all seeds with stock
+    else
+        seedsToBuy = SelectedSeeds
+    end
+
+    -- Loop through each selected seed
+    for _, seedName in ipairs(seedsToBuy) do
+        local stockCount = (SeedStock[seedName]) or 1
+
+        -- Skip the "All Seeds" placeholder
+        if seedName ~= "All Seeds" and stockCount > 0 then
+            for i = 1, stockCount do
+                BuySeed(seedName)
+                task.wait(0.1) -- optional slight delay
+            end
+        end
+    end
 end
+
 
 --Get Gear Stock Functions
 local function GetGearStock(IgnoreNoStock: boolean?): table
@@ -333,7 +336,7 @@ local AutoBuyEventDropdown = AutoBuyTab:CreateDropdown({
 	Options = EventOptions,
 	CurrentOption = {}, -- start empty for multi-select
 	MultipleOptions = true,
-	Flag = "AutoBuyEventGearDropdown",
+	Flag = "AutoBuyEventDropdown",
 	Callback = function(Options)
     if type(Options) == "table" then
         SelectedEventItems = Options
