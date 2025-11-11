@@ -51,9 +51,42 @@ local Window = Rayfield:CreateWindow({
    }
 })
 
+--Get Seed Stock Functions
+local function GetSeedStock(IgnoreNoStock: boolean?): table
+	local SeedShop = PlayerGui:WaitForChild("Seed_Shop")
+	local Items = SeedShop:FindFirstChild("Blueberry", true).Parent
+
+	local SeedStock = {}
+	local NewList = {}
+
+	for _, Item in next, Items:GetChildren() do
+		local MainFrame = Item:FindFirstChild("Main_Frame")
+		if not MainFrame then continue end
+
+		local StockText = MainFrame:FindFirstChild("Stock_Text") and MainFrame.Stock_Text.Text or ""
+		local StockCount = tonumber(StockText:match("%d+")) or 0
+
+		if IgnoreNoStock then
+			if StockCount > 0 then
+				NewList[Item.Name] = StockCount
+			end
+		else
+			SeedStock[Item.Name] = StockCount
+		end
+	end
+
+	return IgnoreNoStock and NewList or SeedStock
+end
+
 --// Dicts
 local GearOptions = {"Trowel", "Hoe", "Shovel"} -- this will be changed for auto gear
-local SeedOptions = {"Carrot", "Strawberry", "Blueberry"}
+--// Build dropdown options dynamically
+local SeedOptions = {}
+local SeedStockData = GetSeedStock(true) -- ignore no-stock seeds
+
+for SeedName, _ in pairs(SeedStockData) do
+	table.insert(SeedOptions, SeedName)
+end
 
 -- Auto Buy Tab
 local AutoBuyTab = Window:CreateTab("Auto Buy", 4483362458) -- Title, Image
@@ -74,11 +107,10 @@ local AutoBuySeedToggle = AutoBuyTab:CreateToggle({
 local AutoBuySeedDropdown = AutoBuyTab:CreateDropdown({
 	Name = "Select Seeds",
 	Options = SeedOptions,
-	CurrentOption = "Carrot",
+	CurrentOption = {}, -- start empty for multi-select
 	MultipleOptions = true,
-	Flag = "AutoBuySeedDropdown", -- A flag is the identifier for the configuration file, make sure every element has a different flag if you're using configuration saving to ensure no overlaps
+	Flag = "AutoBuySeedDropdown",
 	Callback = function(Options)
-		-- Options will be a table of all currently selected items
 		print("Selected seeds:")
 		for _, seed in ipairs(Options) do
 			print(" -", seed)
