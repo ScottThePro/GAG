@@ -53,111 +53,106 @@ local Window = Rayfield:CreateWindow({
 
 --Get Seed Stock Functions
 local function GetSeedStock(IgnoreNoStock: boolean?): table
-	local SeedShop = PlayerGui:WaitForChild("Seed_Shop")
-	local Items = SeedShop:FindFirstChild("Blueberry", true).Parent
+	local SeedShop = PlayerGui:FindFirstChild("Seed_Shop")
+	if not SeedShop then return {} end
 
-	local SeedStock = {}
-	local NewList = {}
+	-- Try to locate the parent that holds all items
+	local sampleItem = SeedShop:FindFirstChild("Blueberry", true)
+	if not sampleItem then return {} end
 
-	for _, Item in next, Items:GetChildren() do
-		local MainFrame = Item:FindFirstChild("Main_Frame")
-		if not MainFrame then continue end
+	local ItemsParent = sampleItem.Parent
+	local items = {}
 
-		local StockText = MainFrame:FindFirstChild("Stock_Text") and MainFrame.Stock_Text.Text or ""
-		local StockCount = tonumber(StockText:match("%d+")) or 0
+	for _, item in pairs(ItemsParent:GetChildren()) do
+		if item:IsA("Frame") then
+			local main = item:FindFirstChild("Main_Frame")
+			if main and main:FindFirstChild("Stock_Text") then
+				local stockText = main.Stock_Text.Text
+				local stockCount = tonumber(stockText:match("%d+")) or 0
 
-		if IgnoreNoStock then
-			if StockCount > 0 then
-				NewList[Item.Name] = StockCount
+				if IgnoreNoStock then
+					if stockCount > 0 then
+						table.insert(items, item.Name)
+					end
+				else
+					table.insert(items, item.Name)
+				end
 			end
-		else
-			SeedStock[Item.Name] = StockCount
 		end
 	end
 
-	return IgnoreNoStock and NewList or SeedStock
+	table.sort(items)
+	return items
 end
+
 
 --Get Gear Stock Functions
 local function GetGearStock(IgnoreNoStock: boolean?): table
-	local GearShop = PlayerGui:WaitForChild("Gear_Shop")
-	local Items = GearShop:FindFirstChild("Trowel", true).Parent
+	local GearShop = PlayerGui:FindFirstChild("Gear_Shop")
+	if not GearShop then return {} end
 
-	local GearStock = {}
-	local NewList = {}
+	-- Try to locate the parent that holds all items
+	local sampleItem = GearShop:FindFirstChild("Trowel", true)
+	if not sampleItem then return {} end
 
-	for _, Item in next, Items:GetChildren() do
-		local MainFrame = Item:FindFirstChild("Main_Frame")
-		if not MainFrame then continue end
+	local ItemsParent = sampleItem.Parent
+	local items = {}
 
-		local StockText = MainFrame:FindFirstChild("Stock_Text") and MainFrame.Stock_Text.Text or ""
-		local StockCount = tonumber(StockText:match("%d+")) or 0
+	for _, item in pairs(ItemsParent:GetChildren()) do
+		if item:IsA("Frame") then
+			local main = item:FindFirstChild("Main_Frame")
+			if main and main:FindFirstChild("Stock_Text") then
+				local stockText = main.Stock_Text.Text
+				local stockCount = tonumber(stockText:match("%d+")) or 0
 
-		if IgnoreNoStock then
-			if StockCount > 0 then
-				NewList[Item.Name] = StockCount
+				if IgnoreNoStock then
+					if stockCount > 0 then
+						table.insert(items, item.Name)
+					end
+				else
+					table.insert(items, item.Name)
+				end
 			end
-		else
-			GearStock[Item.Name] = StockCount
 		end
 	end
 
-	return IgnoreNoStock and NewList or GearStock
+	table.sort(items)
+	return items
 end
+
 
 --Get event stock functions
-local function GetEventStock(IgnoreNoStock: boolean?): table
-	local EventShop = PlayerGui:FindFirstChild("EventShop_UI")
-	if not EventShop then return {} end
+	local function GetEventItems(): table
+    local eventShop = PlayerGui:FindFirstChild("EventShop_UI")
+    if not eventShop then return {} end
+    local mainFrame = eventShop:FindFirstChild("Frame")
+    if not mainFrame then return {} end
+    local scroll = mainFrame:FindFirstChild("ScrollingFrame")
+    if not scroll then return {} end
 
-	local MainFrame = EventShop:FindFirstChild("Frame")
-	if not MainFrame then return {} end
-
-	local ScrollFrame = MainFrame:FindFirstChild("ScrollingFrame")
-	if not ScrollFrame then return {} end
-
-	local NewList = {}
-	for _, Item in pairs(ScrollFrame:GetChildren()) do
-		-- Only count actual item frames (like Baobab)
-		if Item:IsA("Frame") and Item:FindFirstChild("Sheckles_Buy") then
-			local BuyButton = Item.Sheckles_Buy
-			local InStock = BuyButton:FindFirstChild("In_Stock")
-			local NoStock = BuyButton:FindFirstChild("No_Stock")
-
-			-- Check which one is visible
-			local HasStock = false
-			if InStock and InStock.Visible then
-				HasStock = true
-			elseif NoStock and not NoStock.Visible then
-				HasStock = true
-			end
-
-			if not IgnoreNoStock or HasStock then
-				NewList[Item.Name] = HasStock and 1 or 0
-				EventStock[Item.Name] = HasStock and 1 or 0
-			end
-		end
-	end
-	return NewList
+    local items = {}
+    for _, child in pairs(scroll:GetChildren()) do
+        if child:IsA("Frame") then
+            local name = child.Name
+            if not name:match("_Padding") 
+               and not name:match("ItemPadding")
+               and not name:match("UI")
+               and not name:match("Layout")
+            then
+                table.insert(items, name)
+            end
+        end
+    end
+    table.sort(items)
+    return items
 end
---// Seed stock
-local SeedOptions = {}
-local SeedStockData = GetSeedStock(true) -- ignore no-stock seeds
-for SeedName, _ in pairs(SeedStockData) do
-	table.insert(SeedOptions, SeedName)
-end
+
+--// Stock options for our drop downs
+local SeedOptions = GetSeedStock(false)
 --Gear stock
-local GearOptions = {}
-local GearStockData = GetGearStock(true) -- ignore no-stock gear
-for GearName, _ in pairs(GearStockData) do
-	table.insert(GearOptions, GearName)
-end
+local GearOptions = GetGearStock(false)
 --Safari Event stock
-local EventOptions = {}
-local EventStockData = GetEventStock(true) -- ignore no-stock gear
-for EventName, _ in pairs(EventStockData) do
-	table.insert(EventOptions, EventName)
-end
+local EventOptions = GetEventItems()
 
 -- Auto Buy Tab
 local AutoBuyTab = Window:CreateTab("Auto Buy", 4483362458) -- Title, Image
