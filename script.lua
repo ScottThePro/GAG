@@ -1,5 +1,5 @@
 debugX = true
---4
+--6
 local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 
 --// Services
@@ -56,10 +56,10 @@ local Window = Rayfield:CreateWindow({
 
 -- seed variables 
 local SelectedSeeds = {}
-local SeedStock = {}
 --Gear variables
 local SelectedGear = {}
-local GearStock = {}
+--Event variables
+local SelectedEventItems = {}
 --Get Seed Stock Functions
 local function GetSeedStock(IgnoreNoStock: boolean?): table
 	local SeedShop = PlayerGui:FindFirstChild("Seed_Shop")
@@ -114,7 +114,7 @@ local function BuyAllSelectedSeeds()
 
 	-- Loop through each selected seed
 	for _, seedName in ipairs(seedsToBuy) do
-		local stockCount = (SeedStock and SeedStock[seedName]) or 1 -- fallback if SeedStock not defined
+		local stockCount = (SeedOptions and SeedOptions[seedName]) or 1 -- fallback if SeedStock not defined
 		if stockCount and stockCount > 0 then
 			for i = 1, stockCount do
 				BuySeed(seedName)
@@ -181,7 +181,7 @@ local function BuyAllSelectedGear()
 
 	-- Loop through each selected gear
 	for _, gearName in ipairs(gearToBuy) do
-		local stockCount = (GearStock and GearStock[gearName]) or 1 -- fallback if GearStock not defined
+		local stockCount = (GearOptions and GearOptionsgearName]) or 1 -- fallback if GearStock not defined
 		if stockCount and stockCount > 0 then
 			for i = 1, stockCount do
 				BuyGear(gearName)
@@ -256,7 +256,7 @@ local AutoBuySeedToggle = AutoBuyTab:CreateToggle({
 		else
 			--print("Auto Buy stopped")
 		end
-	end,
+	end
 })
 --Auto Buy Seed Dropdown
 local AutoBuySeedDropdown = AutoBuyTab:CreateDropdown({
@@ -278,20 +278,21 @@ end,
 local AutoBuyGearSection = AutoBuyTab:CreateSection("Gear")
 
 local AutoBuyGearToggle = AutoBuyTab:CreateToggle({
-	Name = "Auto Buy Gear",
-	CurrentValue = false,
-	Flag = "AutoBuyGearToggle", -- A flag is the identifier for the configuration file, make sure every element has a different flag if you're using configuration saving to ensure no overlaps
-	Callback = function(Value)
-		AutoBuyGear = Value
-		if AutoBuyGear then
-			task.spawn(function()
-				while AutoBuyGear do
-					BuyAllSelectedGear()
-					task.wait(3) -- delay between purchases
-				end
-			end)
-		end
-	end,
+    Name = "Auto Buy Gear",
+    CurrentValue = false,
+    Flag = "AutoBuyGearToggle",
+    Callback = function(Value)
+        AutoBuyGear = Value
+        if AutoBuyGear then
+            task.spawn(function()
+                while AutoBuyGear do
+                    BuyAllSelectedGear()
+                    task.wait(3)
+                end
+            end)
+        end
+    end
+})
 --Auto Buy Gear Dropdown
 local GearDropdown = AutoBuyTab:CreateDropdown({
 	Name = "Select Gear",
