@@ -56,52 +56,28 @@ local gearptions = {"Trowel", "Hoe", "Shovel"} -- this will be changed for auto 
 local seedoptions = {"Carrot", "Strawberry", "Blueberry"}
 
 -- Auto Buy Tab
-local TabBuy = Window:CreateTab("Auto Buy", 4483362458) -- Title, Image
+local AutoBuyTab = Window:CreateTab("Auto Buy", 4483362458) -- Title, Image
 
--- Auto Buy Seed Section
-local SeedSection = TabBuy:CreateSection("Seeds")
+local AutoBuySeedSection = AutoBuyTab:CreateSection("Seeds")
 
-local SeedDropdown = SeedSection:CreateDropdown({
-    Name = "Select Seeds",
-    Options = seedoptions,
-    CurrentOption = {"Default"},
-    MultipleOptions = false,
-    Flag = "autobuyseeddropdown",
-    Callback = function(Options)
-        -- Options is a table of selected seeds
-    end,
+local AutoBuySeedToggle = AutoBuyTab:CreateToggle({
+	Name = "Auto Buy Seeds",
+	CurrentValue = false,
+	Flag = "Toggle1", -- A flag is the identifier for the configuration file, make sure every element has a different flag if you're using configuration saving to ensure no overlaps
+	Callback = function(Value)
+		-- The function that takes place when the toggle is pressed
+    		-- The variable (Value) is a boolean on whether the toggle is true or false
+	end,
 })
-
-local SeedToggle = SeedSection:CreateToggle({
-    Name = "Auto Buy Seeds",
-    CurrentValue = false,
-    Flag = "autobuyseedtoggle",
-    Callback = function(Value)
-        -- Value is true/false
-    end,
-})
-
--- Auto Buy Gear Section
-local GearSection = TabBuy:CreateSection("Gear")
-
-local GearDropdown = GearSection:CreateDropdown({
-    Name = "Select Gear",
-    Options = gearoptions,
-    CurrentOption = {"Default"},
-    MultipleOptions = false,
-    Flag = "autobuygeardropdown",
-    Callback = function(Options)
-        -- Options is a table of selected gear
-    end,
-})
-
-local GearToggle = GearSection:CreateToggle({
-    Name = "Auto Buy Gear",
-    CurrentValue = false,
-    Flag = "autobuygeartoggle",
-    Callback = function(Value)
-        -- Value is true/false
-    end,
+local AutoBuySeedDropdown = AutoBuyTab:CreateDropdown({
+	Name = "Select Seeds",
+	Options = SeedOptions,
+	CurrentOption = "Option 1",
+	Flag = "AutoBuySeedDropdown", -- A flag is the identifier for the configuration file, make sure every element has a different flag if you're using configuration saving to ensure no overlaps
+	Callback = function(Option)
+	  	  -- The function that takes place when the selected option is changed
+    	  -- The variable (Option) is a string for the value that the dropdown was changed to
+	end,
 })
      
 
