@@ -1,5 +1,5 @@
 debugX = true
---1
+--12
 
 local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 
@@ -57,15 +57,21 @@ local Window = Rayfield:CreateWindow({
 })
 
 -- seed variables 
+local AutoBuySeeds = false
 local SelectedSeeds = {}
 local SeedStock = {}
 --Gear variables
+local AutoBuyGear = false
 local SelectedGear = {}
 local GearStock = {}
 --Egg variables
+local AutoBuyEggs = false
 local SelectedEggs = {}
 local EggsStock = {}
+--Safari Event stock
 --Event variables
+local AutoBuyEvent = false
+local AutoSubmitEvent = false
 local SelectedEventItems = {}
 local EventStock = {}
 
@@ -357,16 +363,6 @@ local function AutoSubmitSafariEventLoop()
     end)
 end
 
---// Stock options for our drop down
-local AutoBuySeeds = false
---Gear stock
-local AutoBuyGear = false
---Safari Event stock
-local AutoBuyEvent = false
---Egg stock
-local AutoBuyEggs = false
---Event Submit
-local AutoSubmitEvent = false
 
 -- Auto Buy Tab
 local AutoBuyTab = Window:CreateTab("Auto Buy", 4483362458) -- Title, Image
