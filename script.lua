@@ -1,5 +1,5 @@
 debugX = true
---12
+--3
 
 local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 
@@ -79,6 +79,7 @@ local EventStock = {}
 --Harvesting crop variables
 local AutoHarvestEnabled = false
 local SelectedHarvestSeeds = {}
+local HarvestIgnores = {}
 
 --Get Seed Stock Functions
 local function GetSeedStock(IgnoreNoStock: boolean?): table
@@ -692,7 +693,7 @@ local AutoSubmitEventToggle = EventTab:CreateToggle({
 local GardenTab = Window:CreateTab("Garden", 4483362458) -- Title, Image
 local AutoHarvestSeedDropdown = GardenTab:CreateDropdown({
     Name = "Select Seeds to Harvest",
-    Options = SeedOptions,
+    Options = GetSeedStock(fakse),
     CurrentOption = {},
     MultipleOptions = true,
     Flag = "AutoHarvestSeedDropdown",
