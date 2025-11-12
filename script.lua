@@ -524,7 +524,7 @@ local EventTab = Window:CreateTab("Event", 4483362458) -- Title, Image
 local EventSection = EventTab:CreateSection("Safari Event")
 --Auto Buy Event toggle
 --// Auto-Submit Toggle
-local AutoSubmitEventToggle = AutoBuyTab:CreateToggle({
+local AutoSubmitEventToggle = EventTab:CreateToggle({
     Name = "Auto Submit Safari Event",
     CurrentValue = false,
     Flag = "AutoSubmitEventToggle",
