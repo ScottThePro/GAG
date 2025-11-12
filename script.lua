@@ -17,6 +17,9 @@ local PlayerGui = LocalPlayer.PlayerGui
 
 local ShecklesCount = Leaderstats.Sheckles
 local GameInfo = MarketplaceService:GetProductInfo(game.PlaceId)
+--Harvest fruits remote event
+local HarvestRemote = ReplicatedStorage.GameEvents.Crops.Collect
+local PlantsPhysical = Workspace:WaitForChild("Plants") 
 
 --// Folders
 local GameEvents = ReplicatedStorage.GameEvents
@@ -68,12 +71,14 @@ local GearStock = {}
 local AutoBuyEggs = false
 local SelectedEggs = {}
 local EggsStock = {}
---Safari Event stock
 --Event variables
 local AutoBuyEvent = false
 local AutoSubmitEvent = false
 local SelectedEventItems = {}
 local EventStock = {}
+--Harvesting crop variables
+local AutoHarvestEnabled = false
+local SelectedHarvestSeeds = {}
 
 --Get Seed Stock Functions
 local function GetSeedStock(IgnoreNoStock: boolean?): table
@@ -192,29 +197,51 @@ local function BuyGear(GearName)
 end
 --Buy all selected gear function
 local function BuyAllSelectedGear()
+    -- Safety: update stock first
+    if type(GearStock) ~= "table" or not next(GearStock) then
+        --warn("[AutoBuyGear] No stock data found — skipping.")
+        return
+    end
+
     local gearToBuy = {}
 
+    -- If "All Gear" is selected, get all available gear from stock
     if table.find(SelectedGear, "All Gear") then
-        gearToBuy = GetGearStock(true)
+        for gearName, stockCount in pairs(GearStock) do
+            if stockCount and stockCount > 0 then
+                table.insert(gearToBuy, gearName)
+            end
+        end
     else
+        -- Otherwise, only buy selected items that have stock
         for _, gearName in ipairs(SelectedGear) do
             local stockCount = GearStock[gearName] or 0
             if stockCount > 0 then
                 table.insert(gearToBuy, gearName)
+            else
+               -- warn(string.format("[AutoBuyGear] '%s' out of stock, skipping.", gearName))
             end
         end
     end
 
+    -- Loop through filtered gear and buy only what's still in stock
     for _, gearName in ipairs(gearToBuy) do
         local stockCount = GearStock[gearName] or 0
         if stockCount > 0 then
             for i = 1, stockCount do
-                BuyGear(gearName)
-                task.wait(0.1)
+                local success, err = pcall(function()
+                    BuyGear(gearName)
+                end)
+                if not success then
+                  --  warn(string.format("[AutoBuyGear] Failed to buy '%s': %s", gearName, err))
+                    break
+                end
+                task.wait(0.15) -- small delay to prevent spam
             end
         end
     end
 end
+
 
 
 --pet egg stock functions -- Get pet/egg stock functions
@@ -259,23 +286,52 @@ end
 
 -- Function to buy all selected eggs
 local function BuyAllSelectedEggs()
-    local eggsToBuy = {}
-
-    -- If "All Eggs" is selected, get the full egg list
-    if table.find(SelectedEggs, "All Eggs") then
-        eggsToBuy = GetEggs()
-    else
-        eggsToBuy = SelectedEggs
+    -- Make sure egg stock data exists
+    if type(EggStock) ~= "table" or not next(EggStock) then
+        warn("[AutoBuyEgg] No egg stock data found — skipping.")
+        return
     end
 
-    -- Loop through each egg and buy it
+    local eggsToBuy = {}
+
+    -- If "All Eggs" is selected, collect all available eggs that have stock
+    if table.find(SelectedEggs, "All Eggs") then
+        for eggName, stockCount in pairs(EggStock) do
+            if stockCount and stockCount > 0 then
+                table.insert(eggsToBuy, eggName)
+            end
+        end
+    else
+        -- Otherwise, buy only selected eggs that have stock
+        for _, eggName in ipairs(SelectedEggs) do
+            local stockCount = EggStock[eggName] or 0
+            if stockCount > 0 then
+                table.insert(eggsToBuy, eggName)
+            else
+                warn(string.format("[AutoBuyEgg] '%s' out of stock, skipping.", eggName))
+            end
+        end
+    end
+
+    -- Loop through eggs that are actually in stock
     for _, eggName in ipairs(eggsToBuy) do
-        if eggName ~= "All Eggs" then
-            BuyEgg(eggName)
-            task.wait(0.2) -- slight delay to avoid spamming the server
+        local stockCount = EggStock[eggName] or 0
+        if stockCount > 0 then
+            local success, err = pcall(function()
+                BuyEgg(eggName)
+            end)
+
+            if success then
+                print(string.format("[AutoBuyEgg] Bought egg: %s", eggName))
+            else
+                warn(string.format("[AutoBuyEgg] Failed to buy '%s': %s", eggName, err))
+            end
+
+            task.wait(0.2) -- small delay to avoid spamming remote events
         end
     end
 end
+
 
 --Get event stock functions
 local function GetEventItems(): table
@@ -317,26 +373,54 @@ end
 
 -- Function to buy all selected event shop items
 local function BuyAllSelectedEventItems()
+    -- Ensure event stock exists before buying
+    if type(EventStock) ~= "table" or not next(EventStock) then
+        warn("[AutoBuyEvent] No event stock data found — skipping.")
+        return
+    end
+
     local itemsToBuy = {}
 
+    -- If "All Event Items" selected, include all stocked items
     if table.find(SelectedEventItems, "All Event Items") then
-        itemsToBuy = GetEventItems()
+        for itemName, stockCount in pairs(EventStock) do
+            if stockCount and stockCount > 0 then
+                table.insert(itemsToBuy, itemName)
+            else
+                warn(string.format("[AutoBuyEvent] '%s' out of stock, skipping.", itemName))
+            end
+        end
     else
+        -- Otherwise, filter only selected items that have stock
         for _, itemName in ipairs(SelectedEventItems) do
-            local stockCount = EventStock[itemName] or 1 -- fallback
+            local stockCount = EventStock[itemName] or 0
             if stockCount > 0 then
                 table.insert(itemsToBuy, itemName)
+            else
+                warn(string.format("[AutoBuyEvent] '%s' out of stock, skipping.", itemName))
             end
         end
     end
 
+    -- Now safely buy each item
     for _, itemName in ipairs(itemsToBuy) do
-        if itemName ~= "All Event Items" then
-            BuyEventItem(itemName, "Safari Shop")
-            task.wait(0.2)
+        local stockCount = EventStock[itemName] or 0
+        if stockCount > 0 then
+            local success, err = pcall(function()
+                BuyEventItem(itemName, "Safari Shop")
+            end)
+
+            if success then
+                print(string.format("[AutoBuyEvent] Bought: %s", itemName))
+            else
+                warn(string.format("[AutoBuyEvent] Failed to buy '%s': %s", itemName, err))
+            end
+
+            task.wait(0.2) -- delay between each purchase to prevent spam
         end
     end
 end
+
 
 --submit event functions 
 -- Function to submit all Safari Event rewards
@@ -363,6 +447,78 @@ local function AutoSubmitSafariEventLoop()
     end)
 end
 
+-- Garden functions
+--Auto harvesting functions
+local function CanHarvest(Plant)
+	local Prompt = Plant:FindFirstChild("ProximityPrompt", true)
+	if not Prompt then return false end
+	if not Prompt.Enabled then return false end
+	return true
+end
+
+local function CollectHarvestable(Parent, Plants, IgnoreDistance)
+	local Character = LocalPlayer.Character
+	if not Character then return Plants end
+
+	local PlayerPosition = Character:GetPivot().Position
+
+	for _, Plant in next, Parent:GetChildren() do
+		-- check nested fruit models
+		local Fruits = Plant:FindFirstChild("Fruits")
+		if Fruits then
+			CollectHarvestable(Fruits, Plants, IgnoreDistance)
+		end
+
+		-- distance check
+		local PlantPosition = Plant:GetPivot().Position
+		local Distance = (PlayerPosition - PlantPosition).Magnitude
+		if not IgnoreDistance and Distance > 15 then continue end
+
+		-- variant filter
+		local Variant = Plant:FindFirstChild("Variant")
+		if Variant and HarvestIgnores[Variant.Value] then continue end
+
+		-- only add plants that match selected seeds
+		if Variant and table.find(SelectedHarvestSeeds, Variant.Value) then
+			if CanHarvest(Plant) then
+				table.insert(Plants, Plant)
+			end
+		end
+	end
+	return Plants
+end
+
+local function GetHarvestablePlants(IgnoreDistance)
+	local Plants = {}
+	CollectHarvestable(PlantsPhysical, Plants, IgnoreDistance)
+	return Plants
+end
+
+local function HarvestSelectedPlants()
+	local Harvestable = GetHarvestablePlants(false)
+	for _, Plant in ipairs(Harvestable) do
+		local success, err = pcall(function()
+			HarvestRemote:FireServer({ Plant })
+		end)
+
+		if success then
+			print("[AutoHarvest] Harvested:", Plant.Name)
+		else
+			warn("[AutoHarvest] Failed to harvest:", Plant.Name, err)
+		end
+		task.wait(0.1)
+	end
+end
+
+--// Auto-harvest loop
+local function AutoHarvestLoop()
+	task.spawn(function()
+		while AutoHarvestEnabled do
+			HarvestSelectedPlants()
+			task.wait(3)
+		end
+	end)
+end
 
 -- Auto Buy Tab
 local AutoBuyTab = Window:CreateTab("Auto Buy", 4483362458) -- Title, Image
@@ -531,6 +687,38 @@ local AutoSubmitEventToggle = EventTab:CreateToggle({
         end
     end
 })
-     
+
+--Garden tab
+local GardenTab = Window:CreateTab("Garden", 4483362458) -- Title, Image
+local AutoHarvestSeedDropdown = GardenTab:CreateDropdown({
+    Name = "Select Seeds to Harvest",
+    Options = SeedOptions,
+    CurrentOption = {},
+    MultipleOptions = true,
+    Flag = "AutoHarvestSeedDropdown",
+    Callback = function(Options)
+        if type(Options) == "table" then
+            SelectedHarvestSeeds = Options
+        else
+            SelectedHarvestSeeds = {Options}
+        end
+        print("[AutoHarvest] Selected seeds:", table.concat(SelectedHarvestSeeds, ", "))
+    end,
+})
+
+local AutoHarvestToggle = GardenTab:CreateToggle({
+    Name = "Auto Harvest Selected Seeds",
+    CurrentValue = false,
+    Flag = "AutoHarvestToggle",
+    Callback = function(Value)
+        AutoHarvestEnabled = Value
+        if AutoHarvestEnabled then
+            print("[AutoHarvest] Enabled.")
+            AutoHarvestLoop()
+        else
+            print("[AutoHarvest] Disabled.")
+        end
+    end,
+})
 -- Load config new
 Rayfield:LoadConfiguration()
