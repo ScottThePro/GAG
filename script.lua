@@ -1,4 +1,4 @@
---123
+--2
 local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 
 --// Services
@@ -397,7 +397,7 @@ local function BuyAllSelectedTravelMerchantItems()
     local itemsToBuy = {}
 
     -- If "All Travel Items" selected, buy everything in stock
-    if table.find(SelectedTravelItems, "All Travel Items") then
+    if table.find(SelectedTravelMerchantItems, "All Travel Items") then
         for itemName, stockCount in pairs(TravelMerchantStock) do
             if stockCount and stockCount > 0 then
                 table.insert(itemsToBuy, itemName)
@@ -405,7 +405,7 @@ local function BuyAllSelectedTravelMerchantItems()
         end
     else
         -- Otherwise, only buy selected items that have stock
-        for _, itemName in ipairs(SelectedTravelItems) do
+        for _, itemName in ipairs(SelectedTravelMerchantItems) do
             local stockCount = TravelMerchantStock[itemName] or 0
             if stockCount > 0 then
                 table.insert(itemsToBuy, itemName)
