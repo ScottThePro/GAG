@@ -1,4 +1,4 @@
---3
+--4
 local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 
 --// Services
@@ -80,7 +80,7 @@ local AutoSubmitEvent = false
 local SelectedEventItems = {}
 local EventStock = {}
 local AutoHarvestSafariDynamic = false
-local CurrentRequiredFruit = nil
+local CurrentRequiredFruit = "Vegetables"
 --Harvesting crop variables
 local AutoHarvestEnabled = false
 local SelectedHarvestSeeds = {}
