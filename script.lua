@@ -1,5 +1,5 @@
 debugX = true
---3
+--1
 
 local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 
@@ -807,7 +807,7 @@ local AutoBuyTravelMerchantToggle = AutoBuyTab:CreateToggle({
 		AutoBuyTravelMerchant = Value
 		if AutoBuyTravelMerchant then
 			task.spawn(function()
-				while AutoBuyEvent do
+				while AutoBuyTravelMerchant do
 					BuyAllSelectedTravelMerchantItems() -- calls our auto-buy function
 					task.wait(3) -- wait a few seconds between buys
 				end
@@ -874,7 +874,7 @@ local EventTab = Window:CreateTab("Event", 4483362458) -- Title, Image
 local EventSection = EventTab:CreateSection("Safari Event")
 --Auto Buy Event toggle
 --Auto harvest required fruit
-local SafariHarvestDynamicToggle = GardenTab:CreateToggle({
+local SafariHarvestDynamicToggle = EventTab:CreateToggle({
     Name = "Auto Harvest Safari Event Fruits",
     CurrentValue = false,
     Flag = "AutoHarvestSafariDynamicToggle",
@@ -905,7 +905,7 @@ local AutoSubmitEventToggle = EventTab:CreateToggle({
 local GardenTab = Window:CreateTab("Garden", 4483362458) -- Title, Image
 local AutoHarvestSeedDropdown = GardenTab:CreateDropdown({
     Name = "Select Seeds to Harvest",
-    Options = GetSeedStock(fakse),
+    Options = GetSeedStock(false),
     CurrentOption = {},
     MultipleOptions = true,
     Flag = "AutoHarvestSeedDropdown",
