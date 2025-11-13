@@ -1,4 +1,4 @@
---2
+--3
 local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 
 --// Services
@@ -517,76 +517,12 @@ local function BuyAllSelectedEventItems()
     end
 end
 
--- Function to get required fruit type from Safari Joyce
-local function GetRequiredSafariFruitType()
-    local success, label = pcall(function()
-        return Workspace:WaitForChild("SafariEvent")
-            :WaitForChild("Safari platform")
-            :WaitForChild("NPC")
-            :WaitForChild("Safari Joyce")
-            :WaitForChild("Head")
-            :WaitForChild("BubblePart")
-            :WaitForChild("SafariTraitBillboard")
-            :WaitForChild("BG")
-            :WaitForChild("TraitTextLabel")
-    end)
-
-    if not (success and label and label:IsA("TextLabel")) then
-        return nil
-    end
-
-    local rawText = label.Text
-    local cleanText = rawText:gsub("<[^>]->", ""):gsub("%s+", " "):gsub("^%s+", ""):gsub("%s+$", "")
-    local fruitType = cleanText:match("Looking for (.+)")
-    return fruitType
-end
-
 -- Check if a plant can be harvested
 local function CanHarvest(Plant)
     local Prompt = Plant:FindFirstChild("ProximityPrompt", true)
     return Prompt and Prompt.Enabled
 end
 
--- Harvest plants matching the current required fruit
-local function HarvestCurrentFruit()
-    if not CurrentRequiredFruit then return end
-    local Character = LocalPlayer.Character
-    if not Character then return end
-    local PlayerPos = Character:GetPivot().Position
-
-    for _, plant in ipairs(PlantsPhysical:GetDescendants()) do
-        local Variant = plant:FindFirstChild("Variant")
-        if Variant and Variant.Value == CurrentRequiredFruit then
-            if CanHarvest(plant) then
-                local PlantPos = plant:GetPivot().Position
-                if (PlayerPos - PlantPos).Magnitude <= 15 then
-                    pcall(function()
-                        HarvestRemote:FireServer({plant})
-                    end)
-                    task.wait(0.1)
-                end
-            end
-        end
-    end
-end
-
--- Dynamic Auto-Harvest loop
-local function AutoHarvestSafariDynamicLoop()
-    task.spawn(function()
-        while AutoHarvestSafariDynamic do
-            -- Update the required fruit
-            local newFruit = GetRequiredSafariFruitType()
-            if newFruit and newFruit ~= CurrentRequiredFruit then
-                CurrentRequiredFruit = newFruit
-                print("[AutoHarvestSafari] Required fruit changed to:", CurrentRequiredFruit)
-            end
-
-            -- Harvest plants of current required fruit
-            HarvestCurrentFruit()
-            task.wait(1.5) -- Adjust loop delay as needed
-        end
-    end)
-end
 --submit event functions 
 -- Function to submit all Safari Event rewards
 local function SubmitAllSafariEvent()
@@ -872,20 +808,6 @@ local EventTab = Window:CreateTab("Event", 4483362458) -- Title, Image
 local EventSection = EventTab:CreateSection("Safari Event")
 --Auto Buy Event toggle
 --Auto harvest required fruit
-local SafariHarvestDynamicToggle = EventTab:CreateToggle({
-    Name = "Auto Harvest Safari Event Fruits",
-    CurrentValue = false,
-    Flag = "AutoHarvestSafariDynamicToggle",
-    Callback = function(Value)
-        AutoHarvestSafariDynamic = Value
-        if AutoHarvestSafariDynamic then
-            print("[AutoHarvestSafari] Dynamic auto-harvest enabled")
-            AutoHarvestSafariDynamicLoop()
-        else
-            print("[AutoHarvestSafari] Dynamic auto-harvest disabled")
-        end
-    end
-})
 --// Auto-Submit Toggle
 local AutoSubmitEventToggle = EventTab:CreateToggle({
     Name = "Auto Submit Safari Event",
