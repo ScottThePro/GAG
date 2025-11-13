@@ -58,7 +58,8 @@ local Window = Rayfield:CreateWindow({
       Key = {"Hello"} -- List of keys that will be accepted by the system, can be RAW file links (pastebin, github etc) or simple strings ("hello","key22")
    }
 })
-
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+--This section is where our game global variables are
 -- seed variables 
 local AutoBuySeeds = false
 local SelectedSeeds = {}
@@ -71,16 +72,24 @@ local GearStock = {}
 local AutoBuyEggs = false
 local SelectedEggs = {}
 local EggsStock = {}
+--Travel merchant variables
+local AutoBuyTravelMerchant = false
+local SelectedTravelMerchantItems = {}
+local TravelMerchantStock = {}
 --Event variables
 local AutoBuyEvent = false
 local AutoSubmitEvent = false
 local SelectedEventItems = {}
 local EventStock = {}
+local AutoHarvestSafariDynamic = false
+local CurrentRequiredFruit = nil
 --Harvesting crop variables
 local AutoHarvestEnabled = false
 local SelectedHarvestSeeds = {}
 local HarvestIgnores = {}
 
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+-- This section is for our game functions
 --Get Seed Stock Functions
 local function GetSeedStock(IgnoreNoStock: boolean?): table
 	local SeedShop = PlayerGui:FindFirstChild("Seed_Shop")
@@ -334,6 +343,94 @@ local function BuyAllSelectedEggs()
 end
 
 
+--// Get Travel Merchant Stock Function
+local function GetTravelMerchantItems(IgnoreNoStock: boolean?): table
+    local travelShop = PlayerGui:FindFirstChild("TravelingMerchantShop_UI") -- check actual UI name in-game if different
+    if not travelShop then return {} end
+
+    local mainFrame = travelShop:FindFirstChild("Frame")
+    if not mainFrame then return {} end
+
+    local scroll = mainFrame:FindFirstChild("ScrollingFrame")
+    if not scroll then return {} end
+
+    local items = {}
+    for _, child in pairs(scroll:GetChildren()) do
+        if child:IsA("Frame") then
+            local name = child.Name
+            if not name:match("_Padding") and not name:match("UI") and not name:match("Layout") then
+                -- Try to find stock text if it exists
+                local stockText = child:FindFirstChild("Stock_Text", true)
+                local stockCount = 1
+                if stockText and stockText:IsA("TextLabel") then
+                    stockCount = tonumber(stockText.Text:match("%d+")) or 0
+                end
+                TravelMerchantStock[name] = stockCount
+
+                if IgnoreNoStock then
+                    if stockCount > 0 then
+                        table.insert(items, name)
+                    end
+                else
+                    table.insert(items, name)
+                end
+            end
+        end
+    end
+
+    table.sort(items)
+    table.insert(items, 1, "All Travel Items")
+    return items
+end
+
+--// Buy single item
+local function BuyTravelMerchantItem(ItemName)
+    if not ItemName or ItemName == "" then return end
+    game:GetService("ReplicatedStorage").GameEvents.BuyTravelingMerchantShopStock:FireServer(ItemName)
+end
+
+--// Buy all selected items
+local function BuyAllSelectedTravelMerchantItems()
+    if type(TravelMerchantStock) ~= "table" or not next(TravelMerchantStock) then
+        --warn("[AutoBuyTravelMerchant] No stock data found — skipping.")
+        return
+    end
+
+    local itemsToBuy = {}
+
+    -- If "All Travel Items" selected, buy everything in stock
+    if table.find(SelectedTravelItems, "All Travel Items") then
+        for itemName, stockCount in pairs(TravelMerchantStock) do
+            if stockCount and stockCount > 0 then
+                table.insert(itemsToBuy, itemName)
+            end
+        end
+    else
+        -- Otherwise, only buy selected items that have stock
+        for _, itemName in ipairs(SelectedTravelItems) do
+            local stockCount = TravelMerchantStock[itemName] or 0
+            if stockCount > 0 then
+                table.insert(itemsToBuy, itemName)
+            else
+                --warn(string.format("[AutoBuyTravelMerchant] '%s' out of stock, skipping.", itemName))
+            end
+        end
+    end
+
+    -- Loop through and buy each item safely
+    for _, itemName in ipairs(itemsToBuy) do
+        local success, err = pcall(function()
+            BuyTravelMerchantItem(itemName)
+        end)
+
+        if not success then
+            warn(string.format("[AutoBuyTravelMerchant] Failed to buy '%s': %s", itemName, err))
+        end
+
+        task.wait(0.15)
+    end
+end
+
 --Get event stock functions
 local function GetEventItems(): table
     local eventShop = PlayerGui:FindFirstChild("EventShop_UI")
@@ -359,7 +456,7 @@ local function GetEventItems(): table
 	--Sort items alphabetically
 	table.sort(items)
 
-	-- Add "All Seeds" to the top of the list
+	-- Add "All Event Items" to the top of the list
 	table.insert(items, 1, "All Event Items")
     return items
 end
@@ -422,7 +519,76 @@ local function BuyAllSelectedEventItems()
     end
 end
 
+-- Function to get required fruit type from Safari Joyce
+local function GetRequiredSafariFruitType()
+    local success, label = pcall(function()
+        return Workspace:WaitForChild("SafariEvent")
+            :WaitForChild("Safari platform")
+            :WaitForChild("NPC")
+            :WaitForChild("Safari Joyce")
+            :WaitForChild("Head")
+            :WaitForChild("BubblePart")
+            :WaitForChild("SafariTraitBillboard")
+            :WaitForChild("BG")
+            :WaitForChild("TraitTextLabel")
+    end)
 
+    if not (success and label and label:IsA("TextLabel")) then
+        return nil
+    end
+
+    local rawText = label.Text
+    local cleanText = rawText:gsub("<[^>]->", ""):gsub("%s+", " "):gsub("^%s+", ""):gsub("%s+$", "")
+    local fruitType = cleanText:match("Looking for (.+)")
+    return fruitType
+end
+
+-- Check if a plant can be harvested
+local function CanHarvest(Plant)
+    local Prompt = Plant:FindFirstChild("ProximityPrompt", true)
+    return Prompt and Prompt.Enabled
+end
+
+-- Harvest plants matching the current required fruit
+local function HarvestCurrentFruit()
+    if not CurrentRequiredFruit then return end
+    local Character = LocalPlayer.Character
+    if not Character then return end
+    local PlayerPos = Character:GetPivot().Position
+
+    for _, plant in ipairs(PlantsPhysical:GetDescendants()) do
+        local Variant = plant:FindFirstChild("Variant")
+        if Variant and Variant.Value == CurrentRequiredFruit then
+            if CanHarvest(plant) then
+                local PlantPos = plant:GetPivot().Position
+                if (PlayerPos - PlantPos).Magnitude <= 15 then
+                    pcall(function()
+                        HarvestRemote:FireServer({plant})
+                    end)
+                    task.wait(0.1)
+                end
+            end
+        end
+    end
+end
+
+-- Dynamic Auto-Harvest loop
+local function AutoHarvestSafariDynamicLoop()
+    task.spawn(function()
+        while AutoHarvestSafariDynamic do
+            -- Update the required fruit
+            local newFruit = GetRequiredSafariFruitType()
+            if newFruit and newFruit ~= CurrentRequiredFruit then
+                CurrentRequiredFruit = newFruit
+                print("[AutoHarvestSafari] Required fruit changed to:", CurrentRequiredFruit)
+            end
+
+            -- Harvest plants of current required fruit
+            HarvestCurrentFruit()
+            task.wait(1.5) -- Adjust loop delay as needed
+        end
+    end)
+end
 --submit event functions 
 -- Function to submit all Safari Event rewards
 local function SubmitAllSafariEvent()
@@ -450,13 +616,6 @@ end
 
 -- Garden functions
 --Auto harvesting functions
-local function CanHarvest(Plant)
-	local Prompt = Plant:FindFirstChild("ProximityPrompt", true)
-	if not Prompt then return false end
-	if not Prompt.Enabled then return false end
-	return true
-end
-
 local function CollectHarvestable(Parent, Plants, IgnoreDistance)
 	local Character = LocalPlayer.Character
 	if not Character then return Plants end
@@ -520,7 +679,8 @@ local function AutoHarvestLoop()
 		end
 	end)
 end
-
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+-- This section is where our menu options are
 -- Auto Buy Tab
 local AutoBuyTab = Window:CreateTab("Auto Buy", 4483362458) -- Title, Image
 
@@ -634,6 +794,43 @@ local AutoBuyEggDropdown = AutoBuyTab:CreateDropdown({
 end,
 })
 
+--Auto Buy Travel Merchant
+local AutoBuyTravelMerchantSection = AutoBuyTab:CreateSection("Travel Merchant")
+
+
+--Auto Buy Event toggle
+local AutoBuyTravelMerchantToggle = AutoBuyTab:CreateToggle({
+	Name = "Auto Buy Travel Merchant",
+	CurrentValue = false,
+	Flag = "AutoBuyTravelMerchantToggle",
+	Callback = function(Value)
+		AutoBuyTravelMerchant = Value
+		if AutoBuyTravelMerchant then
+			task.spawn(function()
+				while AutoBuyEvent do
+					BuyAllSelectedTravelMerchantItems() -- calls our auto-buy function
+					task.wait(3) -- wait a few seconds between buys
+				end
+			end)
+		end
+	end,
+})
+--Auto buy event dropdown
+local AutoBuyTravelMerchantDropdown = AutoBuyTab:CreateDropdown({
+	Name = "Select Travel Merchant Items",
+	Options = GetTravelMerchantItems(),
+	CurrentOption = {}, -- start empty for multi-select
+	MultipleOptions = true,
+	Flag = "AutoBuyTravelMerchantDropdown",
+	Callback = function(Options)
+    if type(Options) == "table" then
+        SelectedTravelMerchantItems = Options
+    else
+        SelectedTravelMerchantItems = {Options}
+    end
+end,
+})
+
 --Auto Buy Event Section
 local AutoBuyEventSection = AutoBuyTab:CreateSection("Event")
 
@@ -676,6 +873,21 @@ local EventTab = Window:CreateTab("Event", 4483362458) -- Title, Image
 --Auto Buy Event Section
 local EventSection = EventTab:CreateSection("Safari Event")
 --Auto Buy Event toggle
+--Auto harvest required fruit
+local SafariHarvestDynamicToggle = GardenTab:CreateToggle({
+    Name = "Auto Harvest Safari Event Fruits",
+    CurrentValue = false,
+    Flag = "AutoHarvestSafariDynamicToggle",
+    Callback = function(Value)
+        AutoHarvestSafariDynamic = Value
+        if AutoHarvestSafariDynamic then
+            print("[AutoHarvestSafari] Dynamic auto-harvest enabled")
+            AutoHarvestSafariDynamicLoop()
+        else
+            print("[AutoHarvestSafari] Dynamic auto-harvest disabled")
+        end
+    end
+})
 --// Auto-Submit Toggle
 local AutoSubmitEventToggle = EventTab:CreateToggle({
     Name = "Auto Submit Safari Event",
