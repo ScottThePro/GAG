@@ -1,4 +1,6 @@
---9
+debugX = true
+--1.0
+
 local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 
 --// Services
@@ -56,8 +58,7 @@ local Window = Rayfield:CreateWindow({
       Key = {"Hello"} -- List of keys that will be accepted by the system, can be RAW file links (pastebin, github etc) or simple strings ("hello","key22")
    }
 })
--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
---This section is where our game global variables are
+
 -- seed variables 
 local AutoBuySeeds = false
 local SelectedSeeds = {}
@@ -76,9 +77,10 @@ local AutoSubmitEvent = false
 local SelectedEventItems = {}
 local EventStock = {}
 --Harvesting crop variables
+local AutoHarvestEnabled = false
+local SelectedHarvestSeeds = {}
+local HarvestIgnores = {}
 
----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
--- This section is for our game functions
 --Get Seed Stock Functions
 local function GetSeedStock(IgnoreNoStock: boolean?): table
 	local SeedShop = PlayerGui:FindFirstChild("Seed_Shop")
@@ -114,7 +116,7 @@ local function GetSeedStock(IgnoreNoStock: boolean?): table
 
 	-- Add "All Seeds" to the top of the list
 	table.insert(items, 1, "All Seeds")
-	
+
 	return items
 end
 
@@ -331,6 +333,7 @@ local function BuyAllSelectedEggs()
     end
 end
 
+
 --Get event stock functions
 local function GetEventItems(): table
     local eventShop = PlayerGui:FindFirstChild("EventShop_UI")
@@ -356,7 +359,7 @@ local function GetEventItems(): table
 	--Sort items alphabetically
 	table.sort(items)
 
-	-- Add "All Event Items" to the top of the list
+	-- Add "All Seeds" to the top of the list
 	table.insert(items, 1, "All Event Items")
     return items
 end
@@ -418,6 +421,8 @@ local function BuyAllSelectedEventItems()
         end
     end
 end
+
+
 --submit event functions 
 -- Function to submit all Safari Event rewards
 local function SubmitAllSafariEvent()
@@ -443,8 +448,79 @@ local function AutoSubmitSafariEventLoop()
     end)
 end
 
--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
--- This section is where our menu options are
+-- Garden functions
+--Auto harvesting functions
+local function CanHarvest(Plant)
+	local Prompt = Plant:FindFirstChild("ProximityPrompt", true)
+	if not Prompt then return false end
+	if not Prompt.Enabled then return false end
+	return true
+end
+
+local function CollectHarvestable(Parent, Plants, IgnoreDistance)
+	local Character = LocalPlayer.Character
+	if not Character then return Plants end
+
+	local PlayerPosition = Character:GetPivot().Position
+
+	for _, Plant in next, Parent:GetChildren() do
+		-- check nested fruit models
+		local Fruits = Plant:FindFirstChild("Fruits")
+		if Fruits then
+			CollectHarvestable(Fruits, Plants, IgnoreDistance)
+		end
+
+		-- distance check
+		local PlantPosition = Plant:GetPivot().Position
+		local Distance = (PlayerPosition - PlantPosition).Magnitude
+		if not IgnoreDistance and Distance > 15 then continue end
+
+		-- variant filter
+		local Variant = Plant:FindFirstChild("Variant")
+		if Variant and HarvestIgnores[Variant.Value] then continue end
+
+		-- only add plants that match selected seeds
+		if Variant and table.find(SelectedHarvestSeeds, Variant.Value) then
+			if CanHarvest(Plant) then
+				table.insert(Plants, Plant)
+			end
+		end
+	end
+	return Plants
+end
+
+local function GetHarvestablePlants(IgnoreDistance)
+	local Plants = {}
+	CollectHarvestable(PlantsPhysical, Plants, IgnoreDistance)
+	return Plants
+end
+
+local function HarvestSelectedPlants()
+	local Harvestable = GetHarvestablePlants(false)
+	for _, Plant in ipairs(Harvestable) do
+		local success, err = pcall(function()
+			HarvestRemote:FireServer({ Plant })
+		end)
+
+		if success then
+			print("[AutoHarvest] Harvested:", Plant.Name)
+		else
+			warn("[AutoHarvest] Failed to harvest:", Plant.Name, err)
+		end
+		task.wait(0.1)
+	end
+end
+
+--// Auto-harvest loop
+local function AutoHarvestLoop()
+	task.spawn(function()
+		while AutoHarvestEnabled do
+			HarvestSelectedPlants()
+			task.wait(3)
+		end
+	end)
+end
+
 -- Auto Buy Tab
 local AutoBuyTab = Window:CreateTab("Auto Buy", 4483362458) -- Title, Image
 
@@ -557,6 +633,7 @@ local AutoBuyEggDropdown = AutoBuyTab:CreateDropdown({
     end
 end,
 })
+
 --Auto Buy Event Section
 local AutoBuyEventSection = AutoBuyTab:CreateSection("Event")
 
@@ -599,7 +676,6 @@ local EventTab = Window:CreateTab("Event", 4483362458) -- Title, Image
 --Auto Buy Event Section
 local EventSection = EventTab:CreateSection("Safari Event")
 --Auto Buy Event toggle
---Auto harvest required fruit
 --// Auto-Submit Toggle
 local AutoSubmitEventToggle = EventTab:CreateToggle({
     Name = "Auto Submit Safari Event",
@@ -612,7 +688,35 @@ local AutoSubmitEventToggle = EventTab:CreateToggle({
         end
     end
 })
-       AutoHarvestLoop()
+
+--Garden tab
+local GardenTab = Window:CreateTab("Garden", 4483362458) -- Title, Image
+local AutoHarvestSeedDropdown = GardenTab:CreateDropdown({
+    Name = "Select Seeds to Harvest",
+    Options = SeedOptions,
+    Options = GetSeedStock(false),
+    CurrentOption = {},
+    MultipleOptions = true,
+    Flag = "AutoHarvestSeedDropdown",
+    Callback = function(Options)
+        if type(Options) == "table" then
+            SelectedHarvestSeeds = Options
+        else
+            SelectedHarvestSeeds = {Options}
+        end
+        print("[AutoHarvest] Selected seeds:", table.concat(SelectedHarvestSeeds, ", "))
+    end,
+})
+
+local AutoHarvestToggle = GardenTab:CreateToggle({
+    Name = "Auto Harvest Selected Seeds",
+    CurrentValue = false,
+    Flag = "AutoHarvestToggle",
+    Callback = function(Value)
+        AutoHarvestEnabled = Value
+        if AutoHarvestEnabled then
+            print("[AutoHarvest] Enabled.")
+            AutoHarvestLoop()
         else
             print("[AutoHarvest] Disabled.")
         end
