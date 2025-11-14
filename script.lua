@@ -1,5 +1,5 @@
 --version
---1.03
+--1.04
 
 local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 
@@ -82,6 +82,8 @@ local Window = Rayfield:CreateWindow({
    }
 })
 
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+-- This section is for our game functions
 --Get Seed Stock Functions
 local function GetSeedStock(IgnoreNoStock: boolean?): table
 	local SeedShop = PlayerGui:FindFirstChild("Seed_Shop")
@@ -281,6 +283,94 @@ local function BuyAllSelectedEggs()
             BuyEgg(eggName)
             task.wait(0.2) -- slight delay to avoid spamming the server
         end
+    end
+end
+
+--// Get Travel Merchant Stock Function
+local function GetTravelMerchantItems(IgnoreNoStock: boolean?): table
+    local travelShop = PlayerGui:FindFirstChild("TravelingMerchantShop_UI") -- check actual UI name in-game if different
+    if not travelShop then return {} end
+
+    local mainFrame = travelShop:FindFirstChild("Frame")
+    if not mainFrame then return {} end
+
+    local scroll = mainFrame:FindFirstChild("ScrollingFrame")
+    if not scroll then return {} end
+
+    local items = {}
+    for _, child in pairs(scroll:GetChildren()) do
+        if child:IsA("Frame") then
+            local name = child.Name
+            if not name:match("_Padding") and not name:match("UI") and not name:match("Layout") then
+                -- Try to find stock text if it exists
+                local stockText = child:FindFirstChild("Stock_Text", true)
+                local stockCount = 1
+                if stockText and stockText:IsA("TextLabel") then
+                    stockCount = tonumber(stockText.Text:match("%d+")) or 0
+                end
+                TravelMerchantStock[name] = stockCount
+
+                if IgnoreNoStock then
+                    if stockCount > 0 then
+                        table.insert(items, name)
+                    end
+                else
+                    table.insert(items, name)
+                end
+            end
+        end
+    end
+
+    table.sort(items)
+    table.insert(items, 1, "All Travel Items")
+    return items
+end
+
+--// Buy single item
+local function BuyTravelMerchantItem(ItemName)
+    if not ItemName or ItemName == "" then return end
+    game:GetService("ReplicatedStorage").GameEvents.BuyTravelingMerchantShopStock:FireServer(ItemName)
+end
+
+--// Buy all selected items
+local function BuyAllSelectedTravelMerchantItems()
+    if type(TravelMerchantStock) ~= "table" or not next(TravelMerchantStock) then
+        --warn("[AutoBuyTravelMerchant] No stock data found — skipping.")
+        return
+    end
+
+    local itemsToBuy = {}
+
+    -- If "All Travel Items" selected, buy everything in stock
+    if table.find(SelectedTravelMerchantItems, "All Travel Items") then
+        for itemName, stockCount in pairs(TravelMerchantStock) do
+            if stockCount and stockCount > 0 then
+                table.insert(itemsToBuy, itemName)
+            end
+        end
+    else
+        -- Otherwise, only buy selected items that have stock
+        for _, itemName in ipairs(SelectedTravelMerchantItems) do
+            local stockCount = TravelMerchantStock[itemName] or 0
+            if stockCount > 0 then
+                table.insert(itemsToBuy, itemName)
+            else
+                --warn(string.format("[AutoBuyTravelMerchant] '%s' out of stock, skipping.", itemName))
+            end
+        end
+    end
+
+    -- Loop through and buy each item safely
+    for _, itemName in ipairs(itemsToBuy) do
+        local success, err = pcall(function()
+            BuyTravelMerchantItem(itemName)
+        end)
+
+        if not success then
+            warn(string.format("[AutoBuyTravelMerchant] Failed to buy '%s': %s", itemName, err))
+        end
+
+        task.wait(0.15)
     end
 end
 
