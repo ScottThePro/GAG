@@ -573,6 +573,43 @@ local AutoBuyEggDropdown = AutoBuyTab:CreateDropdown({
 end,
 })
 
+--Auto Buy Travel Merchant
+local AutoBuyTravelMerchantSection = AutoBuyTab:CreateSection("Travel Merchant")
+
+
+--Auto Buy Travel Merchant toggle
+local AutoBuyTravelMerchantToggle = AutoBuyTab:CreateToggle({
+	Name = "Auto Buy Travel Merchant",
+	CurrentValue = false,
+	Flag = "AutoBuyTravelMerchantToggle",
+	Callback = function(Value)
+		AutoBuyTravelMerchant = Value
+		if AutoBuyTravelMerchant then
+			task.spawn(function()
+				while AutoBuyTravelMerchant do
+					BuyAllSelectedTravelMerchantItems() -- calls our auto-buy function
+					task.wait(3) -- wait a few seconds between buys
+				end
+			end)
+		end
+	end,
+})
+--Auto buy Travel Merchant dropdown
+local AutoBuyTravelMerchantDropdown = AutoBuyTab:CreateDropdown({
+	Name = "Select Travel Merchant Items",
+	Options = GetTravelMerchantItems(),
+	CurrentOption = {}, -- start empty for multi-select
+	MultipleOptions = true,
+	Flag = "AutoBuyTravelMerchantDropdown",
+	Callback = function(Options)
+    if type(Options) == "table" then
+        SelectedTravelMerchantItems = Options
+    else
+        SelectedTravelMerchantItems = {Options}
+    end
+end,
+})
+
 --Auto Buy Event Section
 local AutoBuyEventSection = AutoBuyTab:CreateSection("Event")
 
