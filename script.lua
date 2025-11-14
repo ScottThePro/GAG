@@ -1,5 +1,5 @@
 --version
---1.04
+--1.05
 
 local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 
@@ -288,33 +288,51 @@ end
 
 --// Get Travel Merchant Stock Function
 local function GetTravelMerchantItems(IgnoreNoStock: boolean?): table
-    local travelShop = PlayerGui:FindFirstChild("TravelingMerchantShop_UI") -- check actual UI name in-game if different
-    if not travelShop then return {} end
-
-    local mainFrame = travelShop:FindFirstChild("Frame")
-    if not mainFrame then return {} end
-
-    local scroll = mainFrame:FindFirstChild("ScrollingFrame")
-    if not scroll then return {} end
-
     local items = {}
-    for _, child in pairs(scroll:GetChildren()) do
-        if child:IsA("Frame") then
-            local name = child.Name
-            if not name:match("_Padding") and not name:match("UI") and not name:match("Layout") then
-                -- Try to find stock text if it exists
-                local stockText = child:FindFirstChild("Stock_Text", true)
-                local stockCount = 1
-                if stockText and stockText:IsA("TextLabel") then
-                    stockCount = tonumber(stockText.Text:match("%d+")) or 0
-                end
-                TravelMerchantStock[name] = stockCount
 
-                if IgnoreNoStock then
-                    if stockCount > 0 then
-                        table.insert(items, name)
+    -- Path to all merchant data
+    local tmDataFolder = ReplicatedStorage:WaitForChild("Data")
+        :WaitForChild("TravelingMerchant")
+        :WaitForChild("TravelingMerchantData")
+
+    for _, merchant in ipairs(tmDataFolder:GetChildren()) do
+        -- Require ModuleScript if necessary
+        local data
+        if merchant:IsA("ModuleScript") then
+            local success, result = pcall(require, merchant)
+            if success then
+                data = result
+            else
+                warn("Failed to require " .. merchant.Name)
+            end
+        elseif merchant:IsA("Folder") then
+            data = merchant
+        end
+
+        if data then
+            if type(data) == "table" then
+                for itemName, itemInfo in pairs(data) do
+                    -- Optional: check stock if itemInfo has Stock field
+                    local stockCount = 1
+                    if type(itemInfo) == "table" and itemInfo.Stock then
+                        stockCount = itemInfo.Stock
                     end
-                else
+
+                    TravelMerchantStock[itemName] = stockCount
+
+                    if IgnoreNoStock then
+                        if stockCount > 0 then
+                            table.insert(items, itemName)
+                        end
+                    else
+                        table.insert(items, itemName)
+                    end
+                end
+            elseif typeof(data) == "Instance" then
+                -- If Folder instead of ModuleScript, just get child names
+                for _, child in ipairs(data:GetChildren()) do
+                    local name = child.Name
+                    TravelMerchantStock[name] = 1
                     table.insert(items, name)
                 end
             end
