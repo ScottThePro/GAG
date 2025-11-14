@@ -1,4 +1,4 @@
-debugX = true
+--version
 --1.01
 
 local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
