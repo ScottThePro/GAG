@@ -1,5 +1,5 @@
 --version
---2.01
+--2.02
 
 local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 
@@ -481,59 +481,95 @@ end
 --submit event functions 
 -- Function to submit all Event rewards
 local function SubmitAllGearEvent()
-    local player = Players.LocalPlayer
-    if not player then return end
+    local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
+    -- Locate the remote safely
+    local remote = ReplicatedStorage:FindFirstChild("GameEvents")
+        and ReplicatedStorage.GameEvents:FindFirstChild("SmithingEvent")
+        and ReplicatedStorage.GameEvents.SmithingEvent:FindFirstChild("Smithing_SubmitGearRE")
+
+    if not remote then
+        warn("Smithing_SubmitGearRE remote not found!")
+        return
+    end
+
+    -- Submit with NO arguments (as per RemoteSpy)
     local success, err = pcall(function()
-        ReplicatedStorage.GameEvents.SmithingEvent.Smithing_SubmitGearRE:FireServer()
+        remote:FireServer()
     end)
 
     if not success then
-        warn("Failed to submit Event Gear:", err)
+        warn("Failed to submit all gear:", err)
     end
 end
-
 
 local function SubmitAllEggEvent()
-    local player = Players.LocalPlayer
-    if not player then return end
+    local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
+    -- Locate the remote safely
+    local remote = ReplicatedStorage:FindFirstChild("GameEvents")
+        and ReplicatedStorage.GameEvents:FindFirstChild("SmithingEvent")
+        and ReplicatedStorage.GameEvents.SmithingEvent:FindFirstChild("Smithing_SubmitPetRE")
+
+    if not remote then
+        warn("Smithing_SubmitPetRE remote not found!")
+        return
+    end
+
+    -- Submit with NO arguments (as per RemoteSpy)
     local success, err = pcall(function()
-        ReplicatedStorage.GameEvents.SmithingEvent.Smithing_SubmitPetRE:FireServer()
+        remote:FireServer()
     end)
 
     if not success then
-        warn("Failed to submit Event Egg:", err)
+        warn("Failed to submit all Egg:", err)
     end
 end
 
-
 local function SubmitAllFruitEvent()
-    local player = Players.LocalPlayer
-    if not player then return end
+    local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
+    -- Locate the remote safely
+    local remote = ReplicatedStorage:FindFirstChild("GameEvents")
+        and ReplicatedStorage.GameEvents:FindFirstChild("SmithingEvent")
+        and ReplicatedStorage.GameEvents.SmithingEvent:FindFirstChild("Smithing_SubmitFruitRE")
+
+    if not remote then
+        warn("Smithing_SubmitFruitRE remote not found!")
+        return
+    end
+
+    -- Submit with NO arguments (as per RemoteSpy)
     local success, err = pcall(function()
-        ReplicatedStorage.GameEvents.SmithingEvent.Smithing_SubmitFruitRE:FireServer()
+        remote:FireServer()
     end)
 
     if not success then
-        warn("Failed to submit Event Fruit:", err)
+        warn("Failed to submit all fruit:", err)
     end
 end
 
 -- Auto-submit loop
-local function AutoSubmitEventLoop()
+local function AutoSubmitGearEventLoop()
     task.spawn(function()
         while AutoSubmitGearEvent do
             SubmitAllGearEvent()
             task.wait(3) -- wait 3 seconds between submissions to avoid spam
         end
-		while AutoSubmitEggEvent do
+    end)
+end
+local function AutoSubmitEggEventLoop()
+    task.spawn(function()
+        while AutoSubmitEggEvent do
             SubmitAllEggEvent()
             task.wait(3) -- wait 3 seconds between submissions to avoid spam
         end
-		while AutoSubmitFruitEvent do
-            SubmitAllFruitEvent()
+    end)
+end
+local function AutoSubmitPetEventLoop()
+    task.spawn(function()
+        while AutoSubmitPetEvent do
+            SubmitAllPetEvent()
             task.wait(3) -- wait 3 seconds between submissions to avoid spam
         end
     end)
