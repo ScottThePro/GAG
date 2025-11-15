@@ -1,5 +1,5 @@
 --version
---2.03
+--2.04
 
 local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 
@@ -543,40 +543,6 @@ local function SubmitAllGearEvent()
 end
 
 local function SubmitAllEggEvent()
-    local player = Players.LocalPlayer
-    if not player then
-        warn("No local player found!")
-        return
-    end
-
-    local backpack = player:FindFirstChild("Backpack")
-    if not backpack then
-        warn("Backpack not found!")
-        return
-    end
-
-    -- Find the Common Egg in backpack
-    local commonEggTool
-    for _, item in ipairs(backpack:GetChildren()) do
-        if item:IsA("Tool") and item.Name:match("Common Egg") then
-            commonEggTool = item
-            break
-        end
-    end
-
-    if not commonEggTool then
-        warn("No Common Egg found in backpack!")
-        return
-    end
-
-    -- Equip the Common Egg
-    local success, err = pcall(function()
-        player.Character.Humanoid:EquipTool(commonEggTool)
-    end)
-    if not success then
-        warn("Failed to equip Common Egg:", err)
-        return
-    end
 
     -- Locate the remote safely
     local remote = ReplicatedStorage:FindFirstChild("GameEvents")
@@ -657,7 +623,8 @@ local function SubmitAllFruitEvent()
     end
 
     print("Successfully equipped fruit and submitted it!")
-endlocal function SubmitAllFruitEvent()
+end
+local function SubmitAllFruitEvent()
     local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
     -- Locate the remote safely
@@ -929,6 +896,17 @@ local AutoSubmitFruitEventToggle = EventTab:CreateToggle({
         AutoSubmitFruitEvent = Value
         if AutoSubmitFruitEvent then
             AutoSubmitFruitEventLoop()
+        end
+    end
+})
+local AutoCraftEventSeedToggle = EventTab:CreateToggle({
+    Name = "Auto Craft Seed",
+    CurrentValue = false,
+    Flag = "AutoCraftEventSeedToggle",
+    Callback = function(Value)
+        AutoCraftEventSeed = Value
+        if AutoCraftEventSeed then
+            --AutoSubmitFruitEventLoop()
         end
     end
 })
