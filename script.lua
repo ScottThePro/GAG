@@ -1,5 +1,5 @@
 --version
---1.07
+--1.08
 
 local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 
@@ -401,7 +401,7 @@ local function GetEventItems(): table
     local eventShop = PlayerGui:FindFirstChild("EventShop_UI")
     if not eventShop then return {} end
 
-    -- 🔍 Auto-find the correct item container (ScrollingFrame)
+    --  Auto-find the correct item container (ScrollingFrame)
     local itemContainer = nil
     for _, obj in ipairs(eventShop:GetDescendants()) do
         if obj:IsA("ScrollingFrame") then
