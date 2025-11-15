@@ -1,5 +1,5 @@
 --version
---2.02
+--2.03
 
 local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 
@@ -485,7 +485,40 @@ end
 --submit event functions 
 -- Function to submit all Event rewards
 local function SubmitAllGearEvent()
-    local ReplicatedStorage = game:GetService("ReplicatedStorage")
+    local player = Players.LocalPlayer
+    if not player then
+        warn("No local player found!")
+        return
+    end
+
+    local backpack = player:FindFirstChild("Backpack")
+    if not backpack then
+        warn("Backpack not found!")
+        return
+    end
+
+    -- Find the watering can in backpack
+    local wateringCanTool
+    for _, item in ipairs(backpack:GetChildren()) do
+        if item:IsA("Tool") and item.Name:match("WateringCan") then
+            wateringCanTool = item
+            break
+        end
+    end
+
+    if not wateringCanTool then
+        warn("No watering can found in backpack!")
+        return
+    end
+
+    -- Equip the watering can
+    local success, err = pcall(function()
+        player.Character.Humanoid:EquipTool(wateringCanTool)
+    end)
+    if not success then
+        warn("Failed to equip watering can:", err)
+        return
+    end
 
     -- Locate the remote safely
     local remote = ReplicatedStorage:FindFirstChild("GameEvents")
@@ -497,18 +530,53 @@ local function SubmitAllGearEvent()
         return
     end
 
-    -- Submit with NO arguments (as per RemoteSpy)
-    local success, err = pcall(function()
+    -- Fire the remote
+    success, err = pcall(function()
         remote:FireServer()
     end)
-
     if not success then
-        warn("Failed to submit all gear:", err)
+        warn("Failed to submit gear:", err)
+        return
     end
+
+    print("Successfully equipped watering can and submitted gear!")
 end
 
 local function SubmitAllEggEvent()
-    local ReplicatedStorage = game:GetService("ReplicatedStorage")
+    local player = Players.LocalPlayer
+    if not player then
+        warn("No local player found!")
+        return
+    end
+
+    local backpack = player:FindFirstChild("Backpack")
+    if not backpack then
+        warn("Backpack not found!")
+        return
+    end
+
+    -- Find the Common Egg in backpack
+    local commonEggTool
+    for _, item in ipairs(backpack:GetChildren()) do
+        if item:IsA("Tool") and item.Name:match("Common Egg") then
+            commonEggTool = item
+            break
+        end
+    end
+
+    if not commonEggTool then
+        warn("No Common Egg found in backpack!")
+        return
+    end
+
+    -- Equip the Common Egg
+    local success, err = pcall(function()
+        player.Character.Humanoid:EquipTool(commonEggTool)
+    end)
+    if not success then
+        warn("Failed to equip Common Egg:", err)
+        return
+    end
 
     -- Locate the remote safely
     local remote = ReplicatedStorage:FindFirstChild("GameEvents")
@@ -520,17 +588,76 @@ local function SubmitAllEggEvent()
         return
     end
 
-    -- Submit with NO arguments (as per RemoteSpy)
-    local success, err = pcall(function()
+    -- Fire the remote
+    success, err = pcall(function()
         remote:FireServer()
     end)
-
     if not success then
-        warn("Failed to submit all Egg:", err)
+        warn("Failed to submit egg:", err)
+        return
     end
+
+    print("Successfully equipped Common Egg and submitted it!")
 end
 
 local function SubmitAllFruitEvent()
+    local player = Players.LocalPlayer
+    if not player then
+        warn("No local player found!")
+        return
+    end
+
+    local backpack = player:FindFirstChild("Backpack")
+    if not backpack then
+        warn("Backpack not found!")
+        return
+    end
+
+    -- Find the first fruit in backpack
+    local fruitTool
+    for _, item in ipairs(backpack:GetChildren()) do
+        -- You can adjust this condition to match your fruit naming convention
+        if item:IsA("Tool") and item.Name:match("Fruit") then
+            fruitTool = item
+            break
+        end
+    end
+
+    if not fruitTool then
+        warn("No fruit found in backpack!")
+        return
+    end
+
+    -- Equip the fruit
+    local success, err = pcall(function()
+        player.Character.Humanoid:EquipTool(fruitTool)
+    end)
+    if not success then
+        warn("Failed to equip fruit:", err)
+        return
+    end
+
+    -- Locate the remote safely
+    local remote = ReplicatedStorage:FindFirstChild("GameEvents")
+        and ReplicatedStorage.GameEvents:FindFirstChild("SmithingEvent")
+        and ReplicatedStorage.GameEvents.SmithingEvent:FindFirstChild("Smithing_SubmitFruitRE")
+
+    if not remote then
+        warn("Smithing_SubmitFruitRE remote not found!")
+        return
+    end
+
+    -- Fire the remote event
+    success, err = pcall(function()
+        remote:FireServer()
+    end)
+    if not success then
+        warn("Failed to submit fruit:", err)
+        return
+    end
+
+    print("Successfully equipped fruit and submitted it!")
+endlocal function SubmitAllFruitEvent()
     local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
     -- Locate the remote safely
@@ -570,10 +697,10 @@ local function AutoSubmitEggEventLoop()
         end
     end)
 end
-local function AutoSubmitPetEventLoop()
+local function AutoSubmitFruitEventLoop()
     task.spawn(function()
-        while AutoSubmitPetEvent do
-            SubmitAllPetEvent()
+        while AutoSubmitFruitEvent do
+            SubmitAllFruitEvent()
             task.wait(3) -- wait 3 seconds between submissions to avoid spam
         end
     end)
