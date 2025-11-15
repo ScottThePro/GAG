@@ -1,5 +1,5 @@
 --version
---1.05
+--1.07
 
 local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 
@@ -394,33 +394,56 @@ end
 
 --Get event stock functions
 local function GetEventItems(): table
+    local Players = game:GetService("Players")
+    local Player = Players.LocalPlayer
+    local PlayerGui = Player:WaitForChild("PlayerGui")
+
     local eventShop = PlayerGui:FindFirstChild("EventShop_UI")
     if not eventShop then return {} end
-    local mainFrame = eventShop:FindFirstChild("Frame")
-    if not mainFrame then return {} end
-    local scroll = mainFrame:FindFirstChild("ScrollingFrame")
-    if not scroll then return {} end
+
+    -- 🔍 Auto-find the correct item container (ScrollingFrame)
+    local itemContainer = nil
+    for _, obj in ipairs(eventShop:GetDescendants()) do
+        if obj:IsA("ScrollingFrame") then
+            -- Check if this scrolling frame contains item frames
+            for _, child in ipairs(obj:GetChildren()) do
+                if child:IsA("Frame") and not child.Name:match("Layout") then
+                    itemContainer = obj
+                    break
+                end
+            end
+        end
+        if itemContainer then break end
+    end
+
+    if not itemContainer then
+        warn("GetEventItems(): Could not find Safari item container")
+        return {}
+    end
 
     local items = {}
-    for _, child in pairs(scroll:GetChildren()) do
+
+    --  Collect real item frame names
+    for _, child in ipairs(itemContainer:GetChildren()) do
         if child:IsA("Frame") then
             local name = child.Name
-            if not name:match("_Padding") 
-               and not name:match("ItemPadding")
-               and not name:match("UI")
-               and not name:match("Layout")
+
+            -- clean filtering
+            if not name:match("Layout")
+            and not name:match("Padding")
+            and not name:match("UI")
             then
                 table.insert(items, name)
             end
         end
     end
-	--Sort items alphabetically
-	table.sort(items)
 
-	-- Add "All Seeds" to the top of the list
-	table.insert(items, 1, "All Event Items")
+    table.sort(items)
+    table.insert(items, 1, "All Event Items")
+
     return items
 end
+
 
 --Buy event items functions 
 -- Function to buy a single event shop item
@@ -438,7 +461,7 @@ local function BuyAllSelectedEventItems()
         itemsToBuy = GetEventItems()
     else
         for _, itemName in ipairs(SelectedEventItems) do
-            local stockCount = EventStock[itemName] or 1 -- fallback
+            local stockCount = EventStock[itemName] or 0 -- fallback
             if stockCount > 0 then
                 table.insert(itemsToBuy, itemName)
             end
@@ -631,6 +654,16 @@ end,
 --Auto Buy Event Section
 local AutoBuyEventSection = AutoBuyTab:CreateSection("Event")
 
+--// Auto-Submit Toggle
+local AutoSubmitEventToggle = EventTab:CreateToggle({
+    Name = "Auto Submit Safari Event",
+    CurrentValue = false,
+    Flag = "AutoSubmitEventToggle",
+    Callback = function(Value)
+        AutoSubmitEvent = Value
+        if AutoSubmitEvent then
+            AutoSubmitSafariEventLoop()
+ 
 
 --Auto Buy Event toggle
 local AutoBuyEventToggle = AutoBuyTab:CreateToggle({
@@ -665,23 +698,7 @@ local AutoBuyEventDropdown = AutoBuyTab:CreateDropdown({
 end,
 })
 
--- Event
-local EventTab = Window:CreateTab("Event", 4483362458) -- Title, Image
---Auto Buy Event Section
-local EventSection = EventTab:CreateSection("Safari Event")
---Auto Buy Event toggle
---// Auto-Submit Toggle
-local AutoSubmitEventToggle = EventTab:CreateToggle({
-    Name = "Auto Submit Safari Event",
-    CurrentValue = false,
-    Flag = "AutoSubmitEventToggle",
-    Callback = function(Value)
-        AutoSubmitEvent = Value
-        if AutoSubmitEvent then
-            AutoSubmitSafariEventLoop()
-        end
-    end
-})
+
 
 -- Load config new
 Rayfield:LoadConfiguration()
