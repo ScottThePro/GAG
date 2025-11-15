@@ -1,5 +1,5 @@
 --version
---1.11
+--2.00
 
 local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 
@@ -38,7 +38,9 @@ local SelectedTravelMerchantItems = {}
 local TravelMerchantStock = {}
 --Event variables
 local AutoBuyEvent = false
-local AutoSubmitEvent = false
+local AutoSubmitGearEvent = false
+local AutoSubmitEggEvent = false
+local AutoSubmitFruitEvent = false
 local SelectedEventItems = {}
 local EventStock = {}
 local AutoHarvestSafariDynamic = false
@@ -477,25 +479,61 @@ local function BuyAllSelectedEventItems()
 end
 
 --submit event functions 
--- Function to submit all Safari Event rewards
-local function SubmitAllSafariEvent()
+-- Function to submit all Event rewards
+local function SubmitAllGearEvent()
     local player = Players.LocalPlayer
     if not player then return end
 
     local success, err = pcall(function()
-        ReplicatedStorage.GameEvents.SafariEvent.Safari_SubmitAllRE:FireServer(player)
+        ReplicatedStorage.GameEvents.SmithingEvent.Smithing_SubmitGearRE:FireServer(player)
     end)
 
     if not success then
-        warn("Failed to submit Safari Event:", err)
+        warn("Failed to submit Event Gear:", err)
+    end
+end
+
+
+local function SubmitAllEggEvent()
+    local player = Players.LocalPlayer
+    if not player then return end
+
+    local success, err = pcall(function()
+        ReplicatedStorage.GameEvents.SmithingEvent.Smithing_SubmitPetRE:FireServer(player)
+    end)
+
+    if not success then
+        warn("Failed to submit Event Egg:", err)
+    end
+end
+
+
+local function SubmitAllFruitEvent()
+    local player = Players.LocalPlayer
+    if not player then return end
+
+    local success, err = pcall(function()
+        ReplicatedStorage.GameEvents.SmithingEvent.Smithing_SubmitFruitRE:FireServer(player)
+    end)
+
+    if not success then
+        warn("Failed to submit Event Fruit:", err)
     end
 end
 
 -- Auto-submit loop
-local function AutoSubmitSafariEventLoop()
+local function AutoSubmitEventLoop()
     task.spawn(function()
-        while AutoSubmitEvent do
-            SubmitAllSafariEvent()
+        while AutoSubmitGearEvent do
+            SubmitAllGearEvent()
+            task.wait(3) -- wait 3 seconds between submissions to avoid spam
+        end
+		while AutoSubmitEggEvent do
+            SubmitAllEggEvent()
+            task.wait(3) -- wait 3 seconds between submissions to avoid spam
+        end
+		while AutoSubmitFruitEvent do
+            SubmitAllFruitEvent()
             task.wait(3) -- wait 3 seconds between submissions to avoid spam
         end
     end)
@@ -673,7 +711,7 @@ local AutoBuyEventToggle = AutoBuyTab:CreateToggle({
 })
 --Auto buy event dropdown
 local AutoBuyEventDropdown = AutoBuyTab:CreateDropdown({
-	Name = "Select Event",
+	Name = "Select Event Items",
 	Options = GetEventItems(),
 	CurrentOption = {}, -- start empty for multi-select
 	MultipleOptions = true,
@@ -690,17 +728,40 @@ end,
 -- Event
 local EventTab = Window:CreateTab("Event", 4483362458) -- Title, Image
 --Auto Buy Event Section
-local EventSection = EventTab:CreateSection("Safari Event")
+local EventSection = EventTab:CreateSection("Smithing Event")
 --Auto Buy Event toggle
 --// Auto-Submit Toggle
-local AutoSubmitEventToggle = EventTab:CreateToggle({
-    Name = "Auto Submit Safari Event",
+local AutoSubmitGearEventToggle = EventTab:CreateToggle({
+    Name = "Auto Submit Gear",
     CurrentValue = false,
-    Flag = "AutoSubmitEventToggle",
+    Flag = "AutoSubmitGearEventToggle",
     Callback = function(Value)
-        AutoSubmitEvent = Value
-        if AutoSubmitEvent then
-            AutoSubmitSafariEventLoop()
+        AutoSubmitGearEvent = Value
+        if AutoSubmitGearEvent then
+            AutoSubmitGearEventLoop()
+        end
+    end
+})
+local AutoSubmitEggEventToggle = EventTab:CreateToggle({
+    Name = "Auto Submit Egg",
+    CurrentValue = false,
+    Flag = "AutoSubmitEggEventToggle",
+    Callback = function(Value)
+        AutoSubmitEggEvent = Value
+        if AutoSubmitEggEvent then
+            AutoSubmitEggEventLoop()
+        end
+    end
+})
+
+local AutoSubmitFruitEventToggle = EventTab:CreateToggle({
+    Name = "Auto Submit Fruit",
+    CurrentValue = false,
+    Flag = "AutoSubmitFruitEventToggle",
+    Callback = function(Value)
+        AutoSubmitFruitEvent = Value
+        if AutoSubmitFruitEvent then
+            AutoSubmitFruitEventLoop()
         end
     end
 })
