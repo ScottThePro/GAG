@@ -45,7 +45,10 @@ local AutoSubmitFruitEvent = false
 local AutoCraftingEventSeed = false
 local AutoCraftingEventGear = false
 local AutoCraftingEventPet = false
-local SelectedEventItems = {}
+local SelectedEventSeedItems = {}
+local SelectedEventGearItems = {}
+local SelectedEventPetItems = {}
+local SelectedEventCosmeticItems = {}
 local EventStock = {}
 local AutoHarvestSafariDynamic = false
 local CurrentRequiredFruit = "Safari"
@@ -500,7 +503,7 @@ local function SubmitAllGearEvent()
     -- Find the watering can in backpack
     local wateringCanTool
     for _, item in ipairs(backpack:GetChildren()) do
-        if item:IsA("Tool") and item.Name:match("WateringCan") then
+        if item:IsA("Tool") and item.Name:match("Watering Can") then
             wateringCanTool = item
             break
         end
@@ -543,6 +546,40 @@ local function SubmitAllGearEvent()
 end
 
 local function SubmitAllEggEvent()
+    local player = Players.LocalPlayer
+    if not player then
+        warn("No local player found!")
+        return
+    end
+
+    local backpack = player:FindFirstChild("Backpack")
+    if not backpack then
+        warn("Backpack not found!")
+        return
+    end
+
+    -- Find the Common Egg in backpack
+    local commonEggTool
+    for _, item in ipairs(backpack:GetChildren()) do
+        if item:IsA("Tool") and item.Name:match("Common Egg") then
+            commonEggTool = item
+            break
+        end
+    end
+
+    if not commonEggTool then
+        warn("No Common Egg found in backpack!")
+        return
+    end
+
+    -- Equip the Common Egg
+    local success, err = pcall(function()
+        player.Character.Humanoid:EquipTool(commonEggTool)
+    end)
+    if not success then
+        warn("Failed to equip Common Egg:", err)
+        return
+    end
 
     -- Locate the remote safely
     local remote = ReplicatedStorage:FindFirstChild("GameEvents")
@@ -623,28 +660,6 @@ local function SubmitAllFruitEvent()
     end
 
     print("Successfully equipped fruit and submitted it!")
-end
-local function SubmitAllFruitEvent()
-    local ReplicatedStorage = game:GetService("ReplicatedStorage")
-
-    -- Locate the remote safely
-    local remote = ReplicatedStorage:FindFirstChild("GameEvents")
-        and ReplicatedStorage.GameEvents:FindFirstChild("SmithingEvent")
-        and ReplicatedStorage.GameEvents.SmithingEvent:FindFirstChild("Smithing_SubmitFruitRE")
-
-    if not remote then
-        warn("Smithing_SubmitFruitRE remote not found!")
-        return
-    end
-
-    -- Submit with NO arguments (as per RemoteSpy)
-    local success, err = pcall(function()
-        remote:FireServer()
-    end)
-
-    if not success then
-        warn("Failed to submit all fruit:", err)
-    end
 end
 
 -- Auto-submit loop
@@ -919,9 +934,88 @@ local AutoCraftEventSeedDropdown = EventTab:CreateDropdown({
 	Flag = "AutoCraftEventSeedDropdown",
 	Callback = function(Options)
     if type(Options) == "table" then
-        SelectedEventItems = Options
+        SelectedEventSeedItems = Options
     else
-        SelectedEventItems = {Options}
+        SelectedEventSeedItems = {Options}
+    end
+end,
+})
+local AutoCraftEventGearToggle = EventTab:CreateToggle({
+    Name = "Auto Craft Gear",
+    CurrentValue = false,
+    Flag = "AutoCraftEventGearToggle",
+    Callback = function(Value)
+        AutoCraftEventGear = Value
+        if AutoCraftEventGear then
+            --AutoSubmitFruitEventLoop()
+        end
+    end
+})
+
+local AutoCraftEventGearDropdown = EventTab:CreateDropdown({
+	Name = "Select Gear",
+	Options = {"Smith Treat", "Pet Shard Forger", "Smith Hammer of Harvest", "Thundelbringer" },
+	CurrentOption = {"Olive"}, -- start empty for multi-select
+	MultipleOptions = false,
+	Flag = "AutoCraftEventGearDropdown",
+	Callback = function(Options)
+    if type(Options) == "table" then
+        SelectedEventGearItems = Options
+    else
+        SelectedEventGearItems = {Options}
+    end
+end,
+})
+local AutoCraftEventPetToggle = EventTab:CreateToggle({
+    Name = "Auto Craft Pet",
+    CurrentValue = false,
+    Flag = "AutoCraftEventPetToggle",
+    Callback = function(Value)
+        AutoCraftEventPet = Value
+        if AutoCraftEventPet then
+            --AutoSubmitFruitEventLoop()
+        end
+    end
+})
+
+local AutoCraftEventPetDropdown = EventTab:CreateDropdown({
+	Name = "Select Pet",
+	Options = {"Gem Egg", "Smithing Dog", "Cheetah" },
+	CurrentOption = {"Olive"}, -- start empty for multi-select
+	MultipleOptions = false,
+	Flag = "AutoCraftEventPetDropdown",
+	Callback = function(Options)
+    if type(Options) == "table" then
+        SelectedEventPetItems = Options
+    else
+        SelectedEventPetItems = {Options}
+    end
+end,
+})
+})
+local AutoCraftEventCosmeticToggle = EventTab:CreateToggle({
+    Name = "Auto Craft Cosmetic",
+    CurrentValue = false,
+    Flag = "AutoCraftEventCosmeticToggle",
+    Callback = function(Value)
+        AutoCraftEventCosmetic = Value
+        if AutoCraftEventCosmetic then
+            --AutoSubmitFruitEventLoop()
+        end
+    end
+})
+
+local AutoCraftEventCosmeticDropdown = EventTab:CreateDropdown({
+	Name = "Select Cosmetic",
+	Options = {"Anvil", "Tools Rack", "Coal Box", "Blacksmith Grinder", "Shield Statue", "Horse Shoe Magnet" },
+	CurrentOption = {"Olive"}, -- start empty for multi-select
+	MultipleOptions = false,
+	Flag = "AutoCraftEventCosmeticDropdown",
+	Callback = function(Options)
+    if type(Options) == "table" then
+        SelectedEventCosmeticItems = Options
+    else
+        SelectedEventCosmeticItems = {Options}
     end
 end,
 })
