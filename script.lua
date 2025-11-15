@@ -1,5 +1,5 @@
 --version
---1.1
+--1.11
 
 local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 
@@ -393,34 +393,57 @@ local function BuyAllSelectedTravelMerchantItems()
 end
 
 --Get event stock functions
-local function GetEventItems(): table
-    local eventShop = PlayerGui:FindFirstChild("EventShop_UI")
-    if not eventShop then return {} end
-    local mainFrame = eventShop:FindFirstChild("Frame")
-    if not mainFrame then return {} end
-    local scroll = mainFrame:FindFirstChild("ScrollingFrame")
-    if not scroll then return {} end
-
+local function GetEventItems()
+    local ReplicatedStorage = game:GetService("ReplicatedStorage")
     local items = {}
-    for _, child in pairs(scroll:GetChildren()) do
-        if child:IsA("Frame") then
-            local name = child.Name
-            if not name:match("_Padding") 
-               and not name:match("ItemPadding")
-               and not name:match("UI")
-               and not name:match("Layout")
-            then
-                table.insert(items, name)
-            end
-        end
-    end
-	--Sort items alphabetically
-	table.sort(items)
 
-	-- Add "All Seeds" to the top of the list
-	table.insert(items, 1, "All Event Items")
+    -- Find the Data → SafariEvent → SafariEventRewardData ModuleScript
+    local dataFolder = ReplicatedStorage:FindFirstChild("Data")
+    if not dataFolder then
+        warn("Data folder not found in ReplicatedStorage!")
+        return { "All Event Items" }
+    end
+
+    local safariEvent = dataFolder:FindFirstChild("SafariEvent")
+    if not safariEvent then
+        warn("SafariEvent folder not found in Data!")
+        return { "All Event Items" }
+    end
+
+    local rewardModule = safariEvent:FindFirstChild("SafariEventRewardData")
+    if not rewardModule or not rewardModule:IsA("ModuleScript") then
+        warn("SafariEventRewardData module not found!")
+        return { "All Event Items" }
+    end
+
+    -- Require the module safely
+    local success, rewardData = pcall(require, rewardModule)
+    if not success then
+        warn("Failed to require SafariEventRewardData:", rewardData)
+        return { "All Event Items" }
+    end
+
+    -- Access MilestoneUnlockData.EventShopUnlocks
+    local eventShopUnlocks = rewardData.MilestoneUnlockData and rewardData.MilestoneUnlockData.EventShopUnlocks
+    if not eventShopUnlocks or type(eventShopUnlocks) ~= "table" then
+        warn("EventShopUnlocks not found in MilestoneUnlockData!")
+        return { "All Event Items" }
+    end
+
+    -- Collect item names only (ignore integers)
+    for itemName, _ in pairs(eventShopUnlocks) do
+        table.insert(items, itemName)
+    end
+
+    -- Sort alphabetically
+    table.sort(items)
+
+    -- Add "All Event Items" at the top
+    table.insert(items, 1, "All Event Items")
+
     return items
 end
+
 
 --Buy event items functions 
 -- Function to buy a single event shop item
