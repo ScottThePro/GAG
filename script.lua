@@ -1,5 +1,5 @@
 --version
---2.06
+--2.07
 
 local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 
@@ -1017,7 +1017,6 @@ local AutoCraftEventCosmeticDropdown = EventTab:CreateDropdown({
         SelectedEventCosmeticItems = {Options}
     end
 end,
-})
 })
 
 -- Load config new
