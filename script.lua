@@ -9,6 +9,7 @@ local InsertService = game:GetService("InsertService")
 local MarketplaceService = game:GetService("MarketplaceService")
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
+local Workspace = game:GetService("Workspace")
 
 local LocalPlayer = Players.LocalPlayer
 local Leaderstats = LocalPlayer.leaderstats
@@ -41,6 +42,9 @@ local AutoBuyEvent = false
 local AutoSubmitGearEvent = false
 local AutoSubmitEggEvent = false
 local AutoSubmitFruitEvent = false
+local AutoCraftingEventSeed = false
+local AutoCraftingEventGear = false
+local AutoCraftingEventPet = false
 local SelectedEventItems = {}
 local EventStock = {}
 local AutoHarvestSafariDynamic = false
@@ -800,6 +804,21 @@ local AutoSubmitFruitEventToggle = EventTab:CreateToggle({
             AutoSubmitFruitEventLoop()
         end
     end
+})
+
+local AutoCraftEventSeedDropdown = EventTab:CreateDropdown({
+	Name = "Select Seed",
+	Options = {"Olive", "Hollow Bamboo", "Yarrow" },
+	CurrentOption = {"Olive"}, -- start empty for multi-select
+	MultipleOptions = false,
+	Flag = "AutoCraftEventSeedDropdown",
+	Callback = function(Options)
+    if type(Options) == "table" then
+        SelectedEventItems = Options
+    else
+        SelectedEventItems = {Options}
+    end
+end,
 })
 
 -- Load config new
