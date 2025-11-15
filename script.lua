@@ -1,5 +1,5 @@
 --version
---2.00
+--2.01
 
 local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 
@@ -485,7 +485,7 @@ local function SubmitAllGearEvent()
     if not player then return end
 
     local success, err = pcall(function()
-        ReplicatedStorage.GameEvents.SmithingEvent.Smithing_SubmitGearRE:FireServer(player)
+        ReplicatedStorage.GameEvents.SmithingEvent.Smithing_SubmitGearRE:FireServer()
     end)
 
     if not success then
@@ -499,7 +499,7 @@ local function SubmitAllEggEvent()
     if not player then return end
 
     local success, err = pcall(function()
-        ReplicatedStorage.GameEvents.SmithingEvent.Smithing_SubmitPetRE:FireServer(player)
+        ReplicatedStorage.GameEvents.SmithingEvent.Smithing_SubmitPetRE:FireServer()
     end)
 
     if not success then
@@ -513,7 +513,7 @@ local function SubmitAllFruitEvent()
     if not player then return end
 
     local success, err = pcall(function()
-        ReplicatedStorage.GameEvents.SmithingEvent.Smithing_SubmitFruitRE:FireServer(player)
+        ReplicatedStorage.GameEvents.SmithingEvent.Smithing_SubmitFruitRE:FireServer()
     end)
 
     if not success then
