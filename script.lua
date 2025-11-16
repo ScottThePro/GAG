@@ -1,5 +1,5 @@
 --version
---2.29
+--2.30
 
 local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 
@@ -93,6 +93,22 @@ local Window = Rayfield:CreateWindow({
 
 ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 -- This section is for our game functions
+
+--Recursive search
+local function findDescendantByName(parent, name)
+    for _, child in pairs(parent:GetChildren()) do
+        if child.Name == name then
+            return child
+        end
+        -- Recurse into children
+        local found = findDescendantByName(child, name)
+        if found then
+            return found
+        end
+    end
+    return nil
+end
+
 
 --Get all seed names function
 --This gets all seed names from the SeedData ModuleScript which is how to game does it
@@ -776,7 +792,6 @@ local function AutoCraftingEventGearItem(selectedItem)
         return
     end
 
-    -- Get the platform
     local platform = workspace:FindFirstChild("Interaction")
         and workspace.Interaction:FindFirstChild("UpdateItems")
         and workspace.Interaction.UpdateItems:FindFirstChild("SmithingEvent")
@@ -787,25 +802,17 @@ local function AutoCraftingEventGearItem(selectedItem)
         return
     end
 
-    -- Find the model that contains SmithingGearWorkBench
-    local targetModel
-    for _, model in pairs(platform:GetChildren()) do
-        if model:FindFirstChild("SmithingGearWorkBench") then
-            targetModel = model
-            break
-        end
-    end
-
-    if not targetModel then
-        warn("No model with SmithingGearWorkBench found!")
+    -- Recursively find the workbench
+    local workbench = findDescendantByName(platform, "SmithingGearWorkBench")
+    if not workbench then
+        warn("SmithingGearWorkBench not found!")
         return
     end
 
-    -- Fire the remote
     local success, err = pcall(function()
         ReplicatedStorage.GameEvents.CraftingGlobalObjectService:FireServer(
             "SetRecipe",
-            targetModel.SmithingGearWorkBench,
+            workbench,
             "SmithingEventGearWorkbench",
             selectedItem
         )
@@ -816,8 +823,7 @@ local function AutoCraftingEventGearItem(selectedItem)
         return
     end
 
-    print("Successfully sent craft request for:", selectedItem)
-end
+    
 local function AutoCraftingEventPetItem(selectedItem)
     if not selectedItem or selectedItem == "" then
         warn("No item selected for crafting!")
@@ -847,7 +853,6 @@ local function AutoCraftingEventCosmeticItem(selectedItem)
         return
     end
 
-    -- Get the platform
     local platform = workspace:FindFirstChild("Interaction")
         and workspace.Interaction:FindFirstChild("UpdateItems")
         and workspace.Interaction.UpdateItems:FindFirstChild("SmithingEvent")
@@ -858,25 +863,17 @@ local function AutoCraftingEventCosmeticItem(selectedItem)
         return
     end
 
-    -- Find the model that contains SmithingCosmeticWorkBench
-    local targetModel
-    for _, model in pairs(platform:GetChildren()) do
-        if model:FindFirstChild("SmithingCosmeticWorkBench") then
-            targetModel = model
-            break
-        end
-    end
-
-    if not targetModel then
-        warn("No model with SmithingCosmeticWorkBench found!")
+    -- Recursively find the workbench
+    local workbench = findDescendantByName(platform, "SmithingCosmeticWorkBench")
+    if not workbench then
+        warn("SmithingCosmeticWorkBench not found!")
         return
     end
 
-    -- Fire the remote
     local success, err = pcall(function()
         ReplicatedStorage.GameEvents.CraftingGlobalObjectService:FireServer(
             "SetRecipe",
-            targetModel.SmithingCosmeticWorkBench,
+            workbench,
             "SmithingEventCosmeticWorkbench",
             selectedItem
         )
