@@ -1,5 +1,5 @@
 --version
---2.07
+--2.08
 
 local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 
@@ -18,6 +18,7 @@ local PlayerGui = LocalPlayer.PlayerGui
 
 local ShecklesCount = Leaderstats.Sheckles
 local GameInfo = MarketplaceService:GetProductInfo(game.PlaceId)
+local CraftingEvent = RS.GameEvents.CraftingGlobalObjectService
 
 --// Folders
 local GameEvents = ReplicatedStorage.GameEvents
@@ -605,61 +606,47 @@ end
 
 local function SubmitAllFruitEvent()
     local player = Players.LocalPlayer
-    if not player then
-        warn("No local player found!")
-        return
-    end
+    if not player then return end
 
     local backpack = player:FindFirstChild("Backpack")
-    if not backpack then
-        warn("Backpack not found!")
-        return
-    end
+    if not backpack then return end
 
-    -- Find the first fruit in backpack
     local fruitTool
+
     for _, item in ipairs(backpack:GetChildren()) do
-        -- You can adjust this condition to match your fruit naming convention
-        if item:IsA("Tool") and item.Name:match("Fruit") then
-            fruitTool = item
-            break
+        if item:IsA("Tool") then
+            local itemType = ClassifyItem(item)
+
+            if itemType == "Fruit" then
+                fruitTool = item
+                break
+            end
         end
     end
 
     if not fruitTool then
-        warn("No fruit found in backpack!")
+        warn("No fruit found!")
         return
     end
 
-    -- Equip the fruit
-    local success, err = pcall(function()
+    -- Equip
+    local ok, err = pcall(function()
         player.Character.Humanoid:EquipTool(fruitTool)
     end)
-    if not success then
-        warn("Failed to equip fruit:", err)
-        return
-    end
+    if not ok then warn(err) return end
 
-    -- Locate the remote safely
-    local remote = ReplicatedStorage:FindFirstChild("GameEvents")
-        and ReplicatedStorage.GameEvents:FindFirstChild("SmithingEvent")
+    -- Remote
+    local remote = ReplicatedStorage.GameEvents
+        and ReplicatedStorage.GameEvents.SmithingEvent
         and ReplicatedStorage.GameEvents.SmithingEvent:FindFirstChild("Smithing_SubmitFruitRE")
 
     if not remote then
-        warn("Smithing_SubmitFruitRE remote not found!")
+        warn("SubmitFruit remote missing!")
         return
     end
 
-    -- Fire the remote event
-    success, err = pcall(function()
-        remote:FireServer()
-    end)
-    if not success then
-        warn("Failed to submit fruit:", err)
-        return
-    end
-
-    print("Successfully equipped fruit and submitted it!")
+    remote:FireServer()
+    print("Fruit submitted:", fruitTool.Name)
 end
 
 -- Auto-submit loop
@@ -686,6 +673,89 @@ local function AutoSubmitFruitEventLoop()
             task.wait(3) -- wait 3 seconds between submissions to avoid spam
         end
     end)
+end
+
+local function GetSeedWorkbench()
+    local base = Workspace:FindFirstChild("Interaction")
+    if not base then return nil end
+
+    local updateItems = base:FindFirstChild("UpdateItems")
+    if not updateItems then return nil end
+
+    local smithingEvent = updateItems:FindFirstChild("SmithingEvent")
+    if not smithingEvent then return nil end
+
+    local platform = smithingEvent:FindFirstChild("SmithingPlatform")
+    if not platform then return nil end
+
+    for _, model in ipairs(platform:GetChildren()) do
+        if model:FindFirstChild("SmithingSeedWorkBench") then
+            return model.SmithingSeedWorkBench
+        end
+    end
+
+    return nil
+end
+
+-- Try to claim finished seed (safe)
+local function TryClaim(workbench)
+    local success = pcall(function()
+        CraftingEvent:FireServer("Claim", workbench, "SmithingEventSeedWorkbench", 1)
+    end)
+
+    if success then
+        print("Claimed crafted seed.")
+    end
+
+    return success
+end
+
+-- Crafts the selected seed
+local function StartCrafting(workbench, seedName)
+    CraftingEvent:FireServer(
+        "SetRecipe",
+        workbench,
+        "SmithingEventSeedWorkbench",
+        seedName
+    )
+    print("Crafting:", seedName)
+end
+
+-- Main autocraft loop
+RunService.Heartbeat:Connect(function()
+    if not AutoCraftEventSeed then return end
+
+    local workbench = GetSeedWorkbench()
+    if not workbench then
+        warn("No SmithingSeedWorkBench found!")
+        return
+    end
+
+    local seedName = SelectedEventSeedItems and SelectedEventSeedItems[1]
+    if not seedName then return end
+
+    -- Step 1: Try claim (if finished)
+    local claimed = TryClaim(workbench)
+
+    if claimed then
+        task.wait(0.1) -- small buffer
+        -- Step 2: Immediately craft next
+        StartCrafting(workbench, seedName)
+    end
+end)
+
+-- Public toggle function YOU call
+function AutoCraftSeed(enable)
+    AutoCraftEventSeed = enable
+    print("AutoCraftSeed:", enable and "ON" or "OFF")
+
+    if enable then
+        -- Start first craft immediately
+        local workbench = GetSeedWorkbench()
+        if workbench and SelectedEventSeedItems and SelectedEventSeedItems[1] then
+            StartCrafting(workbench, SelectedEventSeedItems[1])
+        end
+    end
 end
 
 -- Auto Buy Tab
@@ -914,30 +984,31 @@ local AutoSubmitFruitEventToggle = EventTab:CreateToggle({
         end
     end
 })
-local AutoCraftEventSeedToggle = EventTab:CreateToggle({
+local AutoCraftingEventSeedToggle = EventTab:CreateToggle({
     Name = "Auto Craft Seed",
     CurrentValue = false,
-    Flag = "AutoCraftEventSeedToggle",
+    Flag = "AutoCraftingEventSeedToggle",
     Callback = function(Value)
-        AutoCraftEventSeed = Value
-        if AutoCraftEventSeed then
+        AutoCraftingEventSeed = Value
+        if AutoCraftingEventSeed then
             --AutoSubmitFruitEventLoop()
         end
     end
 })
 
-local AutoCraftEventSeedDropdown = EventTab:CreateDropdown({
+local AutoCraftingEventSeedDropdown = EventTab:CreateDropdown({
 	Name = "Select Seed",
 	Options = {"Olive", "Hollow Bamboo", "Yarrow" },
 	CurrentOption = {"Olive"}, -- start empty for multi-select
 	MultipleOptions = false,
-	Flag = "AutoCraftEventSeedDropdown",
+	Flag = "AutoCraftingEventSeedDropdown",
 	Callback = function(Options)
     if type(Options) == "table" then
         SelectedEventSeedItems = Options
     else
         SelectedEventSeedItems = {Options}
     end
+end
 end,
 })
 local AutoCraftEventGearToggle = EventTab:CreateToggle({
