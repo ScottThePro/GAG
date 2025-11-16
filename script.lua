@@ -1,5 +1,5 @@
 --version
---2.28
+--2.29
 
 local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 
@@ -771,12 +771,38 @@ local function AutoCraftingEventGearItem(selectedItem)
     if not selectedItem or selectedItem == "" then
         warn("No item selected for crafting!")
         return
-	end
+    end
 
+    -- Get the platform
+    local platform = workspace:FindFirstChild("Interaction")
+        and workspace.Interaction:FindFirstChild("UpdateItems")
+        and workspace.Interaction.UpdateItems:FindFirstChild("SmithingEvent")
+        and workspace.Interaction.UpdateItems.SmithingEvent:FindFirstChild("SmithingPlatform")
+
+    if not platform then
+        warn("SmithingPlatform not found!")
+        return
+    end
+
+    -- Find the model that contains SmithingGearWorkBench
+    local targetModel
+    for _, model in pairs(platform:GetChildren()) do
+        if model:FindFirstChild("SmithingGearWorkBench") then
+            targetModel = model
+            break
+        end
+    end
+
+    if not targetModel then
+        warn("No model with SmithingGearWorkBench found!")
+        return
+    end
+
+    -- Fire the remote
     local success, err = pcall(function()
         ReplicatedStorage.GameEvents.CraftingGlobalObjectService:FireServer(
             "SetRecipe",
-            workspace.Interaction.UpdateItems.SmithingEvent.SmithingPlatform.Model.SmithingGearWorkBench,
+            targetModel.SmithingGearWorkBench,
             "SmithingEventGearWorkbench",
             selectedItem
         )
@@ -818,10 +844,36 @@ local function AutoCraftingEventCosmeticItem(selectedItem)
         return
     end
 
+    -- Get the platform
+    local platform = workspace:FindFirstChild("Interaction")
+        and workspace.Interaction:FindFirstChild("UpdateItems")
+        and workspace.Interaction.UpdateItems:FindFirstChild("SmithingEvent")
+        and workspace.Interaction.UpdateItems.SmithingEvent:FindFirstChild("SmithingPlatform")
+
+    if not platform then
+        warn("SmithingPlatform not found!")
+        return
+    end
+
+    -- Find the model that contains SmithingCosmeticWorkBench
+    local targetModel
+    for _, model in pairs(platform:GetChildren()) do
+        if model:FindFirstChild("SmithingCosmeticWorkBench") then
+            targetModel = model
+            break
+        end
+    end
+
+    if not targetModel then
+        warn("No model with SmithingCosmeticWorkBench found!")
+        return
+    end
+
+    -- Fire the remote
     local success, err = pcall(function()
         ReplicatedStorage.GameEvents.CraftingGlobalObjectService:FireServer(
             "SetRecipe",
-            workspace.Interaction.UpdateItems.SmithingEvent.SmithingPlatform.Model.Model31.SmithingCosmeticWorkBench,
+            targetModel.SmithingCosmeticWorkBench,
             "SmithingEventCosmeticWorkbench",
             selectedItem
         )
