@@ -1,5 +1,5 @@
 --version
---2.11
+--2.12
 
 local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 
@@ -694,8 +694,6 @@ local function GetSeedWorkbench()
             return model.SmithingSeedWorkBench
         end
     end
-
-    return nil
 end
 
 ---------------------------------------------------------
@@ -730,7 +728,7 @@ end
 -- AUTO LOOP
 ---------------------------------------------------------
 RunService.Heartbeat:Connect(function()
-    if not AutoCrafting then return end
+    if not AutoCraftingSeed then return end
 
     local workbench = GetSeedWorkbench()
     if not workbench then
@@ -753,15 +751,10 @@ end)
 ---------------------------------------------------------
 -- PUBLIC TOGGLE FUNCTION YOU CALL
 ---------------------------------------------------------
-function AutoCraftSeed(enable)
-    AutoCrafting = enable
-    print("AutoCraftSeed:", enable and "ON" or "OFF")
-
-    if enable then
-        local workbench = GetSeedWorkbench()
-        if workbench and SelectedEventSeedItems[1] then
-            StartCrafting(workbench, SelectedEventSeedItems[1])
-        end
+function AutoCraftSeed()
+    local workbench = GetSeedWorkbench()
+    if workbench and SelectedEventSeedItems[1] then
+         StartCrafting(workbench, SelectedEventSeedItems[1])
     end
 end
 
@@ -999,7 +992,7 @@ local AutoCraftingEventSeedToggle = EventTab:CreateToggle({
     Callback = function(Value)
         AutoCraftingEventSeed = Value
         if AutoCraftingEventSeed then
-            AutoCraftSeed(Value)
+            AutoCraftSeed()
         end
     end
 })
