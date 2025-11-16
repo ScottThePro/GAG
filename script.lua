@@ -107,6 +107,9 @@ local function GetAllSeedNames()
     for key, _ in pairs(seedData) do
         table.insert(seeds, key)
     end
+		--Sort items alphabetically
+	table.sort(seeds)
+
     return seeds
 end
 
