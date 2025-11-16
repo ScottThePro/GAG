@@ -1,5 +1,5 @@
 --version
---2.10
+--2.11
 
 local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 
@@ -675,6 +675,97 @@ local function AutoSubmitFruitEventLoop()
     end)
 end
 
+--------------------------------------------------------- Smithing Event Crafting 
+local function GetSeedWorkbench()
+    local base = Workspace:FindFirstChild("Interaction")
+    if not base then return nil end
+
+    local updateItems = base:FindFirstChild("UpdateItems")
+    if not updateItems then return nil end
+
+    local smithingEvent = updateItems:FindFirstChild("SmithingEvent")
+    if not smithingEvent then return nil end
+
+    local platform = smithingEvent:FindFirstChild("SmithingPlatform")
+    if not platform then return nil end
+
+    for _, model in ipairs(platform:GetChildren()) do
+        if model:FindFirstChild("SmithingSeedWorkBench") then
+            return model.SmithingSeedWorkBench
+        end
+    end
+
+    return nil
+end
+
+---------------------------------------------------------
+-- CLAIM FINISHED CRAFT
+---------------------------------------------------------
+local function TryClaim(workbench)
+    local success = pcall(function()
+        CraftingEvent:FireServer("Claim", workbench, "SmithingEventSeedWorkbench", 1)
+    end)
+
+    if success then
+        print("Claimed crafted seed.")
+    end
+
+    return success
+end
+
+---------------------------------------------------------
+-- START A NEW CRAFT
+---------------------------------------------------------
+local function StartCrafting(workbench, seedName)
+    CraftingEvent:FireServer(
+        "SetRecipe",
+        workbench,
+        "SmithingEventSeedWorkbench",
+        seedName
+    )
+    print("Crafting:", seedName)
+end
+
+---------------------------------------------------------
+-- AUTO LOOP
+---------------------------------------------------------
+RunService.Heartbeat:Connect(function()
+    if not AutoCrafting then return end
+
+    local workbench = GetSeedWorkbench()
+    if not workbench then
+        warn("No SmithingSeedWorkBench found!")
+        return
+    end
+
+    local seedName = SelectedEventSeedItems[1]
+    if not seedName then return end
+
+    -- First try to claim finished product
+    local claimed = TryClaim(workbench)
+
+    if claimed then
+        task.wait(0.1) -- tiny buffer
+        StartCrafting(workbench, seedName)
+    end
+end)
+
+---------------------------------------------------------
+-- PUBLIC TOGGLE FUNCTION YOU CALL
+---------------------------------------------------------
+function AutoCraftSeed(enable)
+    AutoCrafting = enable
+    print("AutoCraftSeed:", enable and "ON" or "OFF")
+
+    if enable then
+        local workbench = GetSeedWorkbench()
+        if workbench and SelectedEventSeedItems[1] then
+            StartCrafting(workbench, SelectedEventSeedItems[1])
+        end
+    end
+end
+
+-------------------------------------------------------------------------------Draw our options
 -- Auto Buy Tab
 local AutoBuyTab = Window:CreateTab("Auto Buy", 4483362458) -- Title, Image
 
@@ -908,26 +999,26 @@ local AutoCraftingEventSeedToggle = EventTab:CreateToggle({
     Callback = function(Value)
         AutoCraftingEventSeed = Value
         if AutoCraftingEventSeed then
-            --AutoSubmitFruitEventLoop()
+            AutoCraftSeed(Value)
         end
     end
 })
 
 local AutoCraftingEventSeedDropdown = EventTab:CreateDropdown({
-	Name = "Select Seed",
-	Options = {"Olive", "Hollow Bamboo", "Yarrow" },
-	CurrentOption = {"Olive"}, -- start empty for multi-select
-	MultipleOptions = false,
-	Flag = "AutoCraftingEventSeedDropdown",
-	Callback = function(Options)
-    if type(Options) == "table" then
-        SelectedEventSeedItems = Options
-    else
-        SelectedEventSeedItems = {Options}
-    end
-end
-end,
+    Name = "Select Seed",
+    Options = {"Olive", "Hollow Bamboo", "Yarrow"},
+    CurrentOption = {"Olive"},
+    MultipleOptions = false,
+    Flag = "AutoCraftingEventSeedDropdown",
+    Callback = function(Options)
+        if type(Options) == "table" then
+            SelectedEventSeedItems = Options
+        else
+            SelectedEventSeedItems = {Options}
+        end
+    end,
 })
+
 local AutoCraftingEventGearToggle = EventTab:CreateToggle({
     Name = "Auto Craft Gear",
     CurrentValue = false,
@@ -943,7 +1034,7 @@ local AutoCraftingEventGearToggle = EventTab:CreateToggle({
 local AutoCraftingEventGearDropdown = EventTab:CreateDropdown({
 	Name = "Select Gear",
 	Options = {"Smith Treat", "Pet Shard Forger", "Smith Hammer of Harvest", "Thundelbringer" },
-	CurrentOption = {"Olive"}, -- start empty for multi-select
+	CurrentOption = {"Smith Treat"}, -- start empty for multi-select
 	MultipleOptions = false,
 	Flag = "AutoCraftingEventGearDropdown",
 	Callback = function(Options)
@@ -969,7 +1060,7 @@ local AutoCraftingEventPetToggle = EventTab:CreateToggle({
 local AutoCraftingEventPetDropdown = EventTab:CreateDropdown({
 	Name = "Select Pet",
 	Options = {"Gem Egg", "Smithing Dog", "Cheetah" },
-	CurrentOption = {"Olive"}, -- start empty for multi-select
+	CurrentOption = {"Gem Egg"}, -- start empty for multi-select
 	MultipleOptions = false,
 	Flag = "AutoCraftingEventPetDropdown",
 	Callback = function(Options)
@@ -995,7 +1086,7 @@ local AutoCraftingEventCosmeticToggle = EventTab:CreateToggle({
 local AutoCraftingEventCosmeticDropdown = EventTab:CreateDropdown({
 	Name = "Select Cosmetic",
 	Options = {"Anvil", "Tools Rack", "Coal Box", "Blacksmith Grinder", "Shield Statue", "Horse Shoe Magnet" },
-	CurrentOption = {"Olive"}, -- start empty for multi-select
+	CurrentOption = {"Anvil"}, -- start empty for multi-select
 	MultipleOptions = false,
 	Flag = "AutoCraftingEventCosmeticDropdown",
 	Callback = function(Options)
