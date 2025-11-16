@@ -1,5 +1,5 @@
 --version
---2.24
+--2.25
 
 local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 
@@ -1033,8 +1033,8 @@ local AutoCraftingEventSeedToggle = EventTab:CreateToggle({
     Callback = function(Value)
         AutoCraftingEventSeed = Value
         if AutoCraftingEventSeed then
-			local currentSelection = AutoCraftingEventSeedDropdown.CurrentOption[1]
-            AutoCraftingSeedEventItem(SelectedEventSeedItems)
+			local CurrentSelection = AutoCraftingEventSeedDropdown.CurrentOption[1]
+            AutoCraftingSeedEventItem(CurrentSelection)
         end
     end
 })
@@ -1057,8 +1057,8 @@ local AutoCraftingEventGearToggle = EventTab:CreateToggle({
         AutoCraftingEventGear = Value
         if AutoCraftingEventGear then
 				
-			local currentSelection = AutoCraftingEventGearDropdown.CurrentOption[1]
-            AutoCraftingEventGearItem(SelectedEventGearItems)
+			local CurrentSelection = AutoCraftingEventGearDropdown.CurrentOption[1]
+            AutoCraftingEventGearItem(CurrentSelection)
         end
     end
 })
@@ -1084,8 +1084,8 @@ local AutoCraftingEventPetToggle = EventTab:CreateToggle({
     Callback = function(Value)
         AutoCraftingEventPet = Value
         if AutoCraftingEventPet then
-			local currentSelection = AutoCraftingEventPetDropdown.CurrentOption[1]
-	    	AutoCraftingEventPetItem(SelectedEventPetItems)
+			local CurrentSelection = AutoCraftingEventPetDropdown.CurrentOption[1]
+	    	AutoCraftingEventPetItem(CurrentSelection)
         end
     end
 })
@@ -1107,8 +1107,8 @@ local AutoCraftingEventCosmeticToggle = EventTab:CreateToggle({
     Callback = function(Value)
         AutoCraftingEventCosmetic = Value
         if AutoCraftingEventCosmetic then
-			local currentSelection = AutoCraftingEventCosmeticDropdown.CurrentOption[1]
-            AutoCraftingEventCosmeticItem(SelectedEventCosmeticItems)
+			local CurrentSelection = AutoCraftingEventCosmeticDropdown.CurrentOption[1]
+            AutoCraftingEventCosmeticItem(CurrentSelection)
         end
     end
 })
