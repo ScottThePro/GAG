@@ -1,5 +1,5 @@
 --version
---2.12
+--2.13
 
 local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 
@@ -18,10 +18,10 @@ local PlayerGui = LocalPlayer.PlayerGui
 
 local ShecklesCount = Leaderstats.Sheckles
 local GameInfo = MarketplaceService:GetProductInfo(game.PlaceId)
-local CraftingEvent = RS.GameEvents.CraftingGlobalObjectService
 
 --// Folders
 local GameEvents = ReplicatedStorage.GameEvents
+local CraftingEvent = GameEvents.CraftingGlobalObjectService
 local Farms = workspace.Farm
 
 --global variables
