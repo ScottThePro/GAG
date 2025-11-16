@@ -1,5 +1,5 @@
 --version
---2.19
+--2.20
 
 local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 
@@ -739,89 +739,96 @@ local function AutoSubmitFruitEventLoop()
     end)
 end
 
---------------------------------------------------------- Smithing Event Crafting 
-local function GetSeedWorkbench()
-    local base = Workspace:FindFirstChild("Interaction")
-    if not base then return nil end
-
-    local updateItems = base:FindFirstChild("UpdateItems")
-    if not updateItems then return nil end
-
-    local smithingEvent = updateItems:FindFirstChild("SmithingEvent")
-    if not smithingEvent then return nil end
-
-    local platform = smithingEvent:FindFirstChild("SmithingPlatform")
-    if not platform then return nil end
-
-    for _, model in ipairs(platform:GetChildren()) do
-        if model:FindFirstChild("SmithingSeedWorkBench") then
-            return model.SmithingSeedWorkBench
-        end
-    end
-end
-
----------------------------------------------------------
--- CLAIM FINISHED CRAFT
----------------------------------------------------------
-local function TryClaim(workbench)
-    local success = pcall(function()
-        CraftingEvent:FireServer("Claim", workbench, "SmithingEventSeedWorkbench", 1)
-    end)
-
-    if success then
-        print("Claimed crafted seed.")
-    end
-
-    return success
-end
-
----------------------------------------------------------
--- START A NEW CRAFT
----------------------------------------------------------
-local function StartCrafting(workbench, seedName)
-    CraftingEvent:FireServer(
-        "SetRecipe",
-        workbench,
-        "SmithingEventSeedWorkbench",
-        seedName
-    )
-    print("Crafting:", seedName)
-end
-
----------------------------------------------------------
--- AUTO LOOP
----------------------------------------------------------
-RunService.Heartbeat:Connect(function()
-    if not AutoCraftingEventSeed then return end
-
-    local workbench = GetSeedWorkbench()
-    if not workbench then
-        warn("No SmithingSeedWorkBench found!")
+------------------------------------------------Auto Craft seed event function
+local function AutoCraftSeedEventItem(selectedItem)
+    if not selectedItem or selectedItem == "" then
+        warn("No item selected for crafting!")
         return
     end
 
-    local seedName = SelectedEventSeedItems[1]
-    if not seedName then return end
+    local success, err = pcall(function()
+        ReplicatedStorage.GameEvents.CraftingGlobalObjectService:FireServer(
+            "SetRecipe",
+            workspace.Interaction.UpdateItems.SmithingEvent.SmithingPlatform.Model.SmithingGearWorkBench,
+            "SmithingEventGearWorkbench",
+            selectedItem
+        )
+    end)
 
-    -- First try to claim finished product
-    local claimed = TryClaim(workbench)
-
-    if claimed then
-        task.wait(0.1) -- tiny buffer
-        StartCrafting(workbench, seedName)
+    if not success then
+        warn("Failed to send craft request:", err)
+        return
     end
-end)
 
----------------------------------------------------------
--- PUBLIC TOGGLE FUNCTION YOU CALL
----------------------------------------------------------
-function AutoCraftSeed()
-    local workbench = GetSeedWorkbench()
-    if workbench and SelectedEventSeedItems[1] then
-         StartCrafting(workbench, SelectedEventSeedItems[1])
+    print("Successfully sent craft request for:", selectedItem)
+end
+local function AutoCraftGearEventItem(selectedItem)
+    if not selectedItem or selectedItem == "" then
+        warn("No item selected for crafting!")
+        return
     end
+
+    local success, err = pcall(function()
+        ReplicatedStorage.GameEvents.CraftingGlobalObjectService:FireServer(
+            "SetRecipe",
+            workspace.Interaction.UpdateItems.SmithingEvent.SmithingPlatform.Model.SmithingGearWorkBench,
+            "SmithingEventGearWorkbench",
+            selectedItem
+        )
+    end)
+
+    if not success then
+        warn("Failed to send craft request:", err)
+        return
+    end
+
+    print("Successfully sent craft request for:", selectedItem)
+end
+local function AutoCraftPetEventItem(selectedItem)
+    if not selectedItem or selectedItem == "" then
+        warn("No item selected for crafting!")
+        return
+    end
+
+    local success, err = pcall(function()
+        ReplicatedStorage.GameEvents.CraftingGlobalObjectService:FireServer(
+            "SetRecipe",
+            workspace.Interaction.UpdateItems.SmithingEvent.SmithingPlatform.Model.SmithingGearWorkBench,
+            "SmithingEventGearWorkbench",
+            selectedItem
+        )
+    end)
+
+    if not success then
+        warn("Failed to send craft request:", err)
+        return
+    end
+
+    print("Successfully sent craft request for:", selectedItem)
 end
 
+local function AutoCraftCosmeticEventItem(selectedItem)
+    if not selectedItem or selectedItem == "" then
+        warn("No item selected for crafting!")
+        return
+    end
+
+    local success, err = pcall(function()
+        ReplicatedStorage.GameEvents.CraftingGlobalObjectService:FireServer(
+            "SetRecipe",
+            workspace.Interaction.UpdateItems.SmithingEvent.SmithingPlatform.Model.SmithingGearWorkBench,
+            "SmithingEventGearWorkbench",
+            selectedItem
+        )
+    end)
+
+    if not success then
+        warn("Failed to send craft request:", err)
+        return
+    end
+
+    print("Successfully sent craft request for:", selectedItem)
+end
 -------------------------------------------------------------------------------Draw our options
 -- Auto Buy Tab
 local AutoBuyTab = Window:CreateTab("Auto Buy", 4483362458) -- Title, Image
@@ -1025,7 +1032,7 @@ local AutoCraftingEventSeedToggle = EventTab:CreateToggle({
     Callback = function(Value)
         AutoCraftingEventSeed = Value
         if AutoCraftingEventSeed then
-            AutoCraftSeed()
+            AutoCraftSeedEventItem(SelectedEventSeedItems)
         end
     end
 })
@@ -1052,7 +1059,7 @@ local AutoCraftingEventGearToggle = EventTab:CreateToggle({
     Callback = function(Value)
         AutoCraftingEventGear = Value
         if AutoCraftingEventGear then
-            --AutoSubmitFruitEventLoop()
+            AutoCraftEventGearItems(SelectedEventGearItems)
         end
     end
 })
@@ -1078,7 +1085,7 @@ local AutoCraftingEventPetToggle = EventTab:CreateToggle({
     Callback = function(Value)
         AutoCraftingEventPet = Value
         if AutoCraftingEventPet then
-            --AutoSubmitFruitEventLoop()
+	    	AutoCraftEventPetItems(SelectedEventPetItems)
         end
     end
 })
@@ -1104,7 +1111,7 @@ local AutoCraftingEventCosmeticToggle = EventTab:CreateToggle({
     Callback = function(Value)
         AutoCraftingEventCosmetic = Value
         if AutoCraftingEventCosmetic then
-            --AutoSubmitFruitEventLoop()
+            AutoCraftEventCosmeticItems(SelectedEventCosmeticItems)
         end
     end
 })
