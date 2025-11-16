@@ -1,5 +1,5 @@
 --version
---2.30
+--2.31
 
 local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 
@@ -786,6 +786,7 @@ local function AutoCraftingSeedEventItem(selectedItem)
 
     print("Successfully sent craft request for:", selectedItem)
 end
+
 local function AutoCraftingEventGearItem(selectedItem)
     if not selectedItem or selectedItem == "" then
         warn("No item selected for crafting!")
@@ -822,6 +823,9 @@ local function AutoCraftingEventGearItem(selectedItem)
         warn("Failed to send craft request:", err)
         return
     end
+	
+    print("Successfully sent craft request for:", selectedItem)
+end
 
     
 local function AutoCraftingEventPetItem(selectedItem)
