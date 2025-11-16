@@ -1,5 +1,5 @@
 --version
---2.16
+--2.19
 
 local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 
@@ -654,13 +654,20 @@ local function SubmitAllFruitEvent()
             local itemNameLower = item.Name:lower()
 
             -- Skip seeds
-            if not itemNameLower:find("seed") then
-                -- Check if any seed name exists inside item name
-                for seedName, _ in pairs(seedLookup) do
-                    if itemNameLower:find(seedName:lower()) then
-                        fruitTool = item
-                        break
-                    end
+            if itemNameLower:find("seed") then
+                continue
+            end
+
+            -- Skip pets
+            if itemNameLower:find("%[age%s*%d+%]") then
+                continue
+            end
+
+            -- Check if any seed name exists inside item name
+            for seedName, _ in pairs(seedLookup) do
+                if itemNameLower:find(seedName:lower()) then
+                    fruitTool = item
+                    break
                 end
             end
 
@@ -703,6 +710,7 @@ local function SubmitAllFruitEvent()
 
     print("Successfully equipped fruit and submitted it! ->", fruitTool.Name)
 end
+
 
 
 -- Auto-submit loop
@@ -968,7 +976,7 @@ end,
 -- Event
 local EventTab = Window:CreateTab("Event", 4483362458) -- Title, Image
 --Auto Buy Event Section
-local EventSection = EventTab:CreateSection("Smithing Event")
+local EventSection = EventTab:CreateSection("Smithing Event Submitting")
 --Auto Buy Event toggle
 --// Auto-Submit Toggle
 local AutoSubmitGearEventToggle = EventTab:CreateToggle({
@@ -1005,6 +1013,11 @@ local AutoSubmitFruitEventToggle = EventTab:CreateToggle({
         end
     end
 })
+
+
+--Smithing Event Crafting Section
+local AutoCraftingEventSection = EventTab:CreateSection("Smithing Event Crafting")
+
 local AutoCraftingEventSeedToggle = EventTab:CreateToggle({
     Name = "Auto Craft Seed",
     CurrentValue = false,
