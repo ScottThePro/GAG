@@ -1,5 +1,5 @@
 --version
---2.14
+--2.15
 
 local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 
@@ -39,7 +39,6 @@ local AutoBuyTravelMerchant = false
 local SelectedTravelMerchantItems = {}
 local TravelMerchantStock = {}
 --Event variables
-local AutoBuyEvent = false
 local AutoSubmitGearEvent = false
 local AutoSubmitEggEvent = false
 local AutoSubmitFruitEvent = false
@@ -50,9 +49,6 @@ local SelectedEventSeedItems = {}
 local SelectedEventGearItems = {}
 local SelectedEventPetItems = {}
 local SelectedEventCosmeticItems = {}
-local EventStock = {}
-local AutoHarvestSafariDynamic = false
-local CurrentRequiredFruit = "Safari"
 --Harvesting crop variables
 local AutoHarvestEnabled = false
 local SelectedHarvestSeeds = {}
@@ -94,6 +90,27 @@ local Window = Rayfield:CreateWindow({
 
 ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 -- This section is for our game functions
+
+--Get all seed names function
+--This gets all seed names from the SeedData ModuleScript which is how to game does it
+local function GetAllSeedNames()
+    local dataFolder = ReplicatedStorage:FindFirstChild("Data")
+    if not dataFolder then return {} end
+
+    local seedDataModule = dataFolder:FindFirstChild("SeedData")
+    if not seedDataModule or not seedDataModule:IsA("ModuleScript") then return {} end
+
+    local success, seedData = pcall(require, seedDataModule)
+    if not success or type(seedData) ~= "table" then return {} end
+
+    local seeds = {}
+    for key, _ in pairs(seedData) do
+        table.insert(seeds, key)
+    end
+    return seeds
+end
+
+
 --Get Seed Stock Functions
 local function GetSeedStock(IgnoreNoStock: boolean?): table
 	local SeedShop = PlayerGui:FindFirstChild("Seed_Shop")
@@ -603,7 +620,6 @@ local function SubmitAllEggEvent()
 
     print("Successfully equipped Common Egg and submitted it!")
 end
-
 local function SubmitAllFruitEvent()
     local player = Players.LocalPlayer
     if not player then
@@ -617,12 +633,24 @@ local function SubmitAllFruitEvent()
         return
     end
 
-    -- Find harvested fruit in backpack (single-word, not seed)
+    -- Get all allowed seed names from your other function
+    local seedNames = GetAllSeedNames()  -- expects a table of strings
+    if not seedNames or #seedNames == 0 then
+        warn("No seed names returned from GetAllSeedNames()!")
+        return
+    end
+
+    -- Create a lookup table for faster search
+    local seedLookup = {}
+    for _, name in ipairs(seedNames) do
+        seedLookup[name] = true
+    end
+
+    -- Find a fruit in backpack that matches a seed name
     local fruitTool
     for _, item in ipairs(backpack:GetChildren()) do
         if item:IsA("Tool")
-        and not item.Name:match("Seed")           -- skip seeds
-        and not item.Name:match("%s")             -- must be ONE word
+           and seedLookup[item.Name]  -- only pick items found in GetAllSeedNames()
         then
             fruitTool = item
             break
@@ -630,7 +658,7 @@ local function SubmitAllFruitEvent()
     end
 
     if not fruitTool then
-        warn("No harvested fruit found in backpack!")
+        warn("No matching fruit found in backpack!")
         return
     end
 
@@ -664,6 +692,7 @@ local function SubmitAllFruitEvent()
 
     print("Successfully equipped fruit and submitted it! ->", fruitTool.Name)
 end
+
 
 -- Auto-submit loop
 local function AutoSubmitGearEventLoop()
@@ -925,42 +954,6 @@ local AutoBuyTravelMerchantDropdown = AutoBuyTab:CreateDropdown({
 end,
 })
 
---Auto Buy Event Section
-local AutoBuyEventSection = AutoBuyTab:CreateSection("Event")
-
---Auto Buy Event toggle
-local AutoBuyEventToggle = AutoBuyTab:CreateToggle({
-	Name = "Auto Buy Event",
-	CurrentValue = false,
-	Flag = "AutoBuyEventToggle",
-	Callback = function(Value)
-		AutoBuyEvent = Value
-		if AutoBuyEvent then
-			task.spawn(function()
-				while AutoBuyEvent do
-					BuyAllSelectedEventItems() -- calls our auto-buy function
-					task.wait(3) -- wait a few seconds between buys
-				end
-			end)
-		end
-	end,
-})
---Auto buy event dropdown
-local AutoBuyEventDropdown = AutoBuyTab:CreateDropdown({
-	Name = "Select Event Items",
-	Options = GetEventItems(),
-	CurrentOption = {}, -- start empty for multi-select
-	MultipleOptions = true,
-	Flag = "AutoBuyEventGearDropdown",
-	Callback = function(Options)
-    if type(Options) == "table" then
-        SelectedEventItems = Options
-    else
-        SelectedEventItems = {Options}
-    end
-end,
-})
-
 -- Event
 local EventTab = Window:CreateTab("Event", 4483362458) -- Title, Image
 --Auto Buy Event Section
@@ -1105,6 +1098,22 @@ local AutoCraftingEventCosmeticDropdown = EventTab:CreateDropdown({
         SelectedEventCosmeticItems = {Options}
     end
 end,
+})
+
+
+-- Garden tab
+local GardenTab = Window:CreateTab("Garden", 4483362458) -- Title, Image
+--Auto Buy Event Section
+local GardenSection = GardenTab:CreateSection("Harvest")
+
+local HarvestFruitDropdown = GardenTab:CreateDropdown({
+    Name = "Select Fruit",
+    Options = GetAllSeedNames(), -- populate with seed names
+    CurrentOption = nil,
+    MultipleOptions = false,
+    Callback = function(selected)
+        print("Selected Seed:", selected)
+    end
 })
 
 -- Load config new
