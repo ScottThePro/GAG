@@ -1,5 +1,5 @@
 --version
---2.09
+--2.10
 
 local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 
@@ -673,89 +673,6 @@ local function AutoSubmitFruitEventLoop()
             task.wait(3) -- wait 3 seconds between submissions to avoid spam
         end
     end)
-end
-
-local function GetSeedWorkbench()
-    local base = Workspace:FindFirstChild("Interaction")
-    if not base then return nil end
-
-    local updateItems = base:FindFirstChild("UpdateItems")
-    if not updateItems then return nil end
-
-    local smithingEvent = updateItems:FindFirstChild("SmithingEvent")
-    if not smithingEvent then return nil end
-
-    local platform = smithingEvent:FindFirstChild("SmithingPlatform")
-    if not platform then return nil end
-
-    for _, model in ipairs(platform:GetChildren()) do
-        if model:FindFirstChild("SmithingSeedWorkBench") then
-            return model.SmithingSeedWorkBench
-        end
-    end
-
-    return nil
-end
-
--- Try to claim finished seed (safe)
-local function TryClaim(workbench)
-    local success = pcall(function()
-        CraftingEvent:FireServer("Claim", workbench, "SmithingEventSeedWorkbench", 1)
-    end)
-
-    if success then
-        print("Claimed crafted seed.")
-    end
-
-    return success
-end
-
--- Crafts the selected seed
-local function StartCrafting(workbench, seedName)
-    CraftingEvent:FireServer(
-        "SetRecipe",
-        workbench,
-        "SmithingEventSeedWorkbench",
-        seedName
-    )
-    print("Crafting:", seedName)
-end
-
--- Main autocraft loop
-RunService.Heartbeat:Connect(function()
-    if not AutoCraftingEventSeed then return end
-
-    local workbench = GetSeedWorkbench()
-    if not workbench then
-        warn("No SmithingSeedWorkBench found!")
-        return
-    end
-
-    local seedName = SelectedEventSeedItems and SelectedEventSeedItems[1]
-    if not seedName then return end
-
-    -- Step 1: Try claim (if finished)
-    local claimed = TryClaim(workbench)
-
-    if claimed then
-        task.wait(0.1) -- small buffer
-        -- Step 2: Immediately craft next
-        StartCrafting(workbench, seedName)
-    end
-end)
-
--- Public toggle function YOU call
-function AutoCraftSeed(enable)
-    AutoCraftingEventSeed = enable
-    print("AutoCraftSeed:", enable and "ON" or "OFF")
-
-    if enable then
-        -- Start first craft immediately
-        local workbench = GetSeedWorkbench()
-        if workbench and SelectedEventSeedItems and SelectedEventSeedItems[1] then
-            StartCrafting(workbench, SelectedEventSeedItems[1])
-        end
-    end
 end
 
 -- Auto Buy Tab
