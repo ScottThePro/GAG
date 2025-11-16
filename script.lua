@@ -1,5 +1,5 @@
 --version
---2.23
+--2.24
 
 local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 
@@ -767,12 +767,12 @@ local function AutoCraftingEventGearItem(selectedItem)
     if not selectedItem or selectedItem == "" then
         warn("No item selected for crafting!")
         return
-    end
+	end
 
     local success, err = pcall(function()
         ReplicatedStorage.GameEvents.CraftingGlobalObjectService:FireServer(
             "SetRecipe",
-            workspace.Interaction.UpdateItems.SmithingEvent.SmithingPlatform.Model32.SmithingGearWorkBench,
+            workspace.Interaction.UpdateItems.SmithingEvent.SmithingPlatform.Model.SmithingGearWorkBench,
             "SmithingEventGearWorkbench",
             selectedItem
         )
@@ -794,7 +794,7 @@ local function AutoCraftingEventPetItem(selectedItem)
     local success, err = pcall(function()
         ReplicatedStorage.GameEvents.CraftingGlobalObjectService:FireServer(
             "SetRecipe",
-            workspace.Interaction.UpdateItems.SmithingEvent.SmithingPlatform.Model32.SmithingPetWorkBench,
+            workspace.Interaction.UpdateItems.SmithingEvent.SmithingPlatform.Model30.SmithingPetWorkBench,
             "SmithingEventPetWorkbench",
             selectedItem
         )
@@ -817,7 +817,7 @@ local function AutoCraftingEventCosmeticItem(selectedItem)
     local success, err = pcall(function()
         ReplicatedStorage.GameEvents.CraftingGlobalObjectService:FireServer(
             "SetRecipe",
-            workspace.Interaction.UpdateItems.SmithingEvent.SmithingPlatform.Model32.SmithingCosmeticWorkBench,
+            workspace.Interaction.UpdateItems.SmithingEvent.SmithingPlatform.Model.Model31.SmithingCosmeticWorkBench,
             "SmithingEventCosmeticWorkbench",
             selectedItem
         )
@@ -1033,6 +1033,7 @@ local AutoCraftingEventSeedToggle = EventTab:CreateToggle({
     Callback = function(Value)
         AutoCraftingEventSeed = Value
         if AutoCraftingEventSeed then
+			local currentSelection = AutoCraftingEventSeedDropdown.CurrentOption[1]
             AutoCraftingSeedEventItem(SelectedEventSeedItems)
         end
     end
@@ -1045,11 +1046,6 @@ local AutoCraftingEventSeedDropdown = EventTab:CreateDropdown({
     MultipleOptions = false,
     Flag = "AutoCraftingEventSeedDropdown",
     Callback = function(Options)
-        if type(Options) == "table" then
-            SelectedEventSeedItems = Options
-        else
-            SelectedEventSeedItems = {Options}
-        end
     end,
 })
 
@@ -1060,6 +1056,8 @@ local AutoCraftingEventGearToggle = EventTab:CreateToggle({
     Callback = function(Value)
         AutoCraftingEventGear = Value
         if AutoCraftingEventGear then
+				
+			local currentSelection = AutoCraftingEventGearDropdown.CurrentOption[1]
             AutoCraftingEventGearItem(SelectedEventGearItems)
         end
     end
@@ -1086,6 +1084,7 @@ local AutoCraftingEventPetToggle = EventTab:CreateToggle({
     Callback = function(Value)
         AutoCraftingEventPet = Value
         if AutoCraftingEventPet then
+			local currentSelection = AutoCraftingEventPetDropdown.CurrentOption[1]
 	    	AutoCraftingEventPetItem(SelectedEventPetItems)
         end
     end
@@ -1098,11 +1097,7 @@ local AutoCraftingEventPetDropdown = EventTab:CreateDropdown({
 	MultipleOptions = false,
 	Flag = "AutoCraftingEventPetDropdown",
 	Callback = function(Options)
-    if type(Options) == "table" then
-        SelectedEventPetItems = Options
-    else
-        SelectedEventPetItems = {Options}
-    end
+			
 end,
 })
 local AutoCraftingEventCosmeticToggle = EventTab:CreateToggle({
@@ -1112,6 +1107,7 @@ local AutoCraftingEventCosmeticToggle = EventTab:CreateToggle({
     Callback = function(Value)
         AutoCraftingEventCosmetic = Value
         if AutoCraftingEventCosmetic then
+			local currentSelection = AutoCraftingEventCosmeticDropdown.CurrentOption[1]
             AutoCraftingEventCosmeticItem(SelectedEventCosmeticItems)
         end
     end
@@ -1124,11 +1120,6 @@ local AutoCraftingEventCosmeticDropdown = EventTab:CreateDropdown({
 	MultipleOptions = false,
 	Flag = "AutoCraftingEventCosmeticDropdown",
 	Callback = function(Options)
-    if type(Options) == "table" then
-        SelectedEventCosmeticItems = Options
-    else
-        SelectedEventCosmeticItems = {Options}
-    end
 end,
 })
 
