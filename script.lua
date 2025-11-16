@@ -1,5 +1,5 @@
 --version
---2.15
+--2.16
 
 local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 
@@ -620,6 +620,7 @@ local function SubmitAllEggEvent()
 
     print("Successfully equipped Common Egg and submitted it!")
 end
+
 local function SubmitAllFruitEvent()
     local player = Players.LocalPlayer
     if not player then
@@ -633,27 +634,37 @@ local function SubmitAllFruitEvent()
         return
     end
 
-    -- Get all allowed seed names from your other function
-    local seedNames = GetAllSeedNames()  -- expects a table of strings
+    -- Get all allowed seed names
+    local seedNames = GetAllSeedNames()
     if not seedNames or #seedNames == 0 then
         warn("No seed names returned from GetAllSeedNames()!")
         return
     end
 
-    -- Create a lookup table for faster search
+    -- Convert seed names to lowercase for easier comparison
     local seedLookup = {}
     for _, name in ipairs(seedNames) do
-        seedLookup[name] = true
+        seedLookup[name:lower()] = true
     end
 
-    -- Find a fruit in backpack that matches a seed name
+    -- Find a fruit in backpack
     local fruitTool
     for _, item in ipairs(backpack:GetChildren()) do
-        if item:IsA("Tool")
-           and seedLookup[item.Name]  -- only pick items found in GetAllSeedNames()
-        then
-            fruitTool = item
-            break
+        if item:IsA("Tool") then
+            local itemNameLower = item.Name:lower()
+
+            -- Skip seeds
+            if not itemNameLower:find("seed") then
+                -- Check if any seed name exists inside item name
+                for seedName, _ in pairs(seedLookup) do
+                    if itemNameLower:find(seedName:lower()) then
+                        fruitTool = item
+                        break
+                    end
+                end
+            end
+
+            if fruitTool then break end
         end
     end
 
