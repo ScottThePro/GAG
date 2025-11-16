@@ -1,5 +1,5 @@
 --version
---2.26
+--2.27
 
 local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 
@@ -758,6 +758,7 @@ local function AutoCraftingSeedEventItem(selectedItem)
             selectedItem
         )
     end)
+	
 
     if not success then
         warn("Failed to send craft request:", err)
