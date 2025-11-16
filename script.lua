@@ -34,6 +34,9 @@ local AutoBuyGear = false
 local SelectedGear = {}
 local GearStock = {}
 --Egg variables
+local AutoBuyEggs = false
+local SelectedEggs = {}
+local EggStock = {}
 --Travel merchant variables
 local AutoBuyTravelMerchant = false
 local SelectedTravelMerchantItems = {}
