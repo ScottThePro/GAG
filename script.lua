@@ -1,5 +1,5 @@
 --version
---2.13
+--2.14
 
 local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 
@@ -606,47 +606,63 @@ end
 
 local function SubmitAllFruitEvent()
     local player = Players.LocalPlayer
-    if not player then return end
+    if not player then
+        warn("No local player found!")
+        return
+    end
 
     local backpack = player:FindFirstChild("Backpack")
-    if not backpack then return end
+    if not backpack then
+        warn("Backpack not found!")
+        return
+    end
 
+    -- Find harvested fruit in backpack (single-word, not seed)
     local fruitTool
-
     for _, item in ipairs(backpack:GetChildren()) do
-        if item:IsA("Tool") then
-            local itemType = ClassifyItem(item)
-
-            if itemType == "Fruit" then
-                fruitTool = item
-                break
-            end
+        if item:IsA("Tool")
+        and not item.Name:match("Seed")           -- skip seeds
+        and not item.Name:match("%s")             -- must be ONE word
+        then
+            fruitTool = item
+            break
         end
     end
 
     if not fruitTool then
-        warn("No fruit found!")
+        warn("No harvested fruit found in backpack!")
         return
     end
 
-    -- Equip
-    local ok, err = pcall(function()
+    -- Equip the fruit
+    local success, err = pcall(function()
         player.Character.Humanoid:EquipTool(fruitTool)
     end)
-    if not ok then warn(err) return end
+    if not success then
+        warn("Failed to equip fruit:", err)
+        return
+    end
 
-    -- Remote
-    local remote = ReplicatedStorage.GameEvents
-        and ReplicatedStorage.GameEvents.SmithingEvent
+    -- Locate the SubmitFruit remote safely
+    local remote = ReplicatedStorage:FindFirstChild("GameEvents")
+        and ReplicatedStorage.GameEvents:FindFirstChild("SmithingEvent")
         and ReplicatedStorage.GameEvents.SmithingEvent:FindFirstChild("Smithing_SubmitFruitRE")
 
     if not remote then
-        warn("SubmitFruit remote missing!")
+        warn("Smithing_SubmitFruitRE remote not found!")
         return
     end
 
-    remote:FireServer()
-    print("Fruit submitted:", fruitTool.Name)
+    -- Fire the remote
+    success, err = pcall(function()
+        remote:FireServer()
+    end)
+    if not success then
+        warn("Failed to submit fruit:", err)
+        return
+    end
+
+    print("Successfully equipped fruit and submitted it! ->", fruitTool.Name)
 end
 
 -- Auto-submit loop
