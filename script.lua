@@ -1,5 +1,5 @@
 --version
---2.25
+--2.26
 
 local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 
@@ -984,12 +984,12 @@ local AutoBuyTravelMerchantDropdown = AutoBuyTab:CreateDropdown({
 end,
 })
 
--- Event
+--------------------------------------------------------------------Smithing Event Section-------------------------------------------------------------------------------------------------
 local EventTab = Window:CreateTab("Event", 4483362458) -- Title, Image
---Auto Buy Event Section
+--AEvent section
 local EventSection = EventTab:CreateSection("Smithing Event Submitting")
 --Auto Buy Event toggle
---// Auto-Submit Toggle
+--Auto submit gear to the event toggle
 local AutoSubmitGearEventToggle = EventTab:CreateToggle({
     Name = "Auto Submit Gear",
     CurrentValue = false,
@@ -1001,6 +1001,7 @@ local AutoSubmitGearEventToggle = EventTab:CreateToggle({
         end
     end
 })
+--Auto submit egg to the event toggle
 local AutoSubmitEggEventToggle = EventTab:CreateToggle({
     Name = "Auto Submit Egg",
     CurrentValue = false,
@@ -1012,7 +1013,7 @@ local AutoSubmitEggEventToggle = EventTab:CreateToggle({
         end
     end
 })
-
+--Auto submit fruit to the event toggle
 local AutoSubmitFruitEventToggle = EventTab:CreateToggle({
     Name = "Auto Submit Fruit",
     CurrentValue = false,
@@ -1025,10 +1026,20 @@ local AutoSubmitFruitEventToggle = EventTab:CreateToggle({
     end
 })
 
+--------------------------------------------------------------------Smithing Event Crafting Section-------------------------------------------------------------------------------------------------
 
---Smithing Event Crafting Section
 local AutoCraftingEventSection = EventTab:CreateSection("Smithing Event Crafting")
-
+--Auto crafting event seed dropdown
+local AutoCraftingEventSeedDropdown = EventTab:CreateDropdown({
+    Name = "Select Seed",
+    Options = {"Olive", "Hollow Bamboo", "Yarrow"},
+    CurrentOption = {"Olive"},
+    MultipleOptions = false,
+    Flag = "AutoCraftingEventSeedDropdown",
+    Callback = function(Options)
+    end,
+})
+-- Aitp crafting event seed toggle
 local AutoCraftingEventSeedToggle = EventTab:CreateToggle({
     Name = "Auto Craft Seed",
     CurrentValue = false,
@@ -1041,31 +1052,7 @@ local AutoCraftingEventSeedToggle = EventTab:CreateToggle({
         end
     end
 })
-
-local AutoCraftingEventSeedDropdown = EventTab:CreateDropdown({
-    Name = "Select Seed",
-    Options = {"Olive", "Hollow Bamboo", "Yarrow"},
-    CurrentOption = {"Olive"},
-    MultipleOptions = false,
-    Flag = "AutoCraftingEventSeedDropdown",
-    Callback = function(Options)
-    end,
-})
-
-local AutoCraftingEventGearToggle = EventTab:CreateToggle({
-    Name = "Auto Craft Gear",
-    CurrentValue = false,
-    Flag = "AutoCraftEventGearToggle",
-    Callback = function(Value)
-        AutoCraftingEventGear = Value
-        if AutoCraftingEventGear then
-				
-			local CurrentSelection = AutoCraftingEventGearDropdown.CurrentOption[1]
-            AutoCraftingEventGearItem(CurrentSelection)
-        end
-    end
-})
-
+--Auto crafting event gear dropdown
 local AutoCraftingEventGearDropdown = EventTab:CreateDropdown({
 	Name = "Select Gear",
 	Options = {"Smith Treat", "Pet Shard Forger", "Smith Hammer of Harvest", "Thundelbringer" },
@@ -1080,6 +1067,32 @@ local AutoCraftingEventGearDropdown = EventTab:CreateDropdown({
     end
 end,
 })
+--Auto crafting event gear toggle
+local AutoCraftingEventGearToggle = EventTab:CreateToggle({
+    Name = "Auto Craft Gear",
+    CurrentValue = false,
+    Flag = "AutoCraftEventGearToggle",
+    Callback = function(Value)
+        AutoCraftingEventGear = Value
+        if AutoCraftingEventGear then
+				
+			local CurrentSelection = AutoCraftingEventGearDropdown.CurrentOption[1]
+            AutoCraftingEventGearItem(CurrentSelection)
+        end
+    end
+})
+-- Auto crafting event pet drop down
+local AutoCraftingEventPetDropdown = EventTab:CreateDropdown({
+	Name = "Select Pet",
+	Options = {"Gem Egg", "Smithing Dog", "Cheetah" },
+	CurrentOption = {"Gem Egg"}, -- start empty for multi-select
+	MultipleOptions = false,
+	Flag = "AutoCraftingEventPetDropdown",
+	Callback = function(Options)
+			
+end,
+})
+--Auto crafting event pet toggle
 local AutoCraftingEventPetToggle = EventTab:CreateToggle({
     Name = "Auto Craft Pet",
     CurrentValue = false,
@@ -1092,17 +1105,17 @@ local AutoCraftingEventPetToggle = EventTab:CreateToggle({
         end
     end
 })
-
-local AutoCraftingEventPetDropdown = EventTab:CreateDropdown({
-	Name = "Select Pet",
-	Options = {"Gem Egg", "Smithing Dog", "Cheetah" },
-	CurrentOption = {"Gem Egg"}, -- start empty for multi-select
+--Auto craftint event cosmetic drop down
+local AutoCraftingEventCosmeticDropdown = EventTab:CreateDropdown({
+	Name = "Select Cosmetic",
+	Options = {"Anvil", "Tools Rack", "Coal Box", "Blacksmith Grinder", "Shield Statue", "Horse Shoe Magnet" },
+	CurrentOption = {"Anvil"}, -- start empty for multi-select
 	MultipleOptions = false,
-	Flag = "AutoCraftingEventPetDropdown",
+	Flag = "AutoCraftingEventCosmeticDropdown",
 	Callback = function(Options)
-			
 end,
 })
+--Auto crafting event cosmetic toggle
 local AutoCraftingEventCosmeticToggle = EventTab:CreateToggle({
     Name = "Auto Craft Cosmetic",
     CurrentValue = false,
@@ -1116,16 +1129,7 @@ local AutoCraftingEventCosmeticToggle = EventTab:CreateToggle({
     end
 })
 
-local AutoCraftingEventCosmeticDropdown = EventTab:CreateDropdown({
-	Name = "Select Cosmetic",
-	Options = {"Anvil", "Tools Rack", "Coal Box", "Blacksmith Grinder", "Shield Statue", "Horse Shoe Magnet" },
-	CurrentOption = {"Anvil"}, -- start empty for multi-select
-	MultipleOptions = false,
-	Flag = "AutoCraftingEventCosmeticDropdown",
-	Callback = function(Options)
-end,
-})
-
+-------------------------------------------------------------------------------------------------Garden section ----------------------------------------------------------------------------------------------------
 
 -- Garden tab
 local GardenTab = Window:CreateTab("Garden", 4483362458) -- Title, Image
