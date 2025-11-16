@@ -1,5 +1,5 @@
 --version
---2.21
+--2.22
 
 local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 
@@ -749,8 +749,8 @@ local function AutoCraftingSeedEventItem(selectedItem)
     local success, err = pcall(function()
         ReplicatedStorage.GameEvents.CraftingGlobalObjectService:FireServer(
             "SetRecipe",
-            workspace.Interaction.UpdateItems.SmithingEvent.SmithingPlatform.Model.SmithingGearWorkBench,
-            "SmithingEventGearWorkbench",
+            workspace.Interaction.UpdateItems.SmithingEvent.SmithingPlatform.Model.SmithingSeedWorkBench,
+            "SmithingEventSeedWorkbench",
             selectedItem
         )
     end)
@@ -762,7 +762,7 @@ local function AutoCraftingSeedEventItem(selectedItem)
 
     print("Successfully sent craft request for:", selectedItem)
 end
-local function AutoCraftingGearEventItem(selectedItem)
+local function AutoCraftingEventGearItem(selectedItem)
     if not selectedItem or selectedItem == "" then
         warn("No item selected for crafting!")
         return
@@ -784,7 +784,7 @@ local function AutoCraftingGearEventItem(selectedItem)
 
     print("Successfully sent craft request for:", selectedItem)
 end
-local function AutoCraftingPetEventItem(selectedItem)
+local function AutoCraftingEventPetItem(selectedItem)
     if not selectedItem or selectedItem == "" then
         warn("No item selected for crafting!")
         return
@@ -793,8 +793,8 @@ local function AutoCraftingPetEventItem(selectedItem)
     local success, err = pcall(function()
         ReplicatedStorage.GameEvents.CraftingGlobalObjectService:FireServer(
             "SetRecipe",
-            workspace.Interaction.UpdateItems.SmithingEvent.SmithingPlatform.Model.SmithingGearWorkBench,
-            "SmithingEventGearWorkbench",
+            workspace.Interaction.UpdateItems.SmithingEvent.SmithingPlatform.Model.SmithingPetWorkBench,
+            "SmithingEventPetWorkbench",
             selectedItem
         )
     end)
@@ -807,7 +807,7 @@ local function AutoCraftingPetEventItem(selectedItem)
     print("Successfully sent craft request for:", selectedItem)
 end
 
-local function AutoCraftingCosmeticEventItem(selectedItem)
+local function AutoCraftingEventCosmeticItem(selectedItem)
     if not selectedItem or selectedItem == "" then
         warn("No item selected for crafting!")
         return
@@ -816,8 +816,8 @@ local function AutoCraftingCosmeticEventItem(selectedItem)
     local success, err = pcall(function()
         ReplicatedStorage.GameEvents.CraftingGlobalObjectService:FireServer(
             "SetRecipe",
-            workspace.Interaction.UpdateItems.SmithingEvent.SmithingPlatform.Model.SmithingGearWorkBench,
-            "SmithingEventGearWorkbench",
+            workspace.Interaction.UpdateItems.SmithingEvent.SmithingPlatform.Model.SmithingCosmeticWorkBench,
+            "SmithingEventCosmeticWorkbench",
             selectedItem
         )
     end)
