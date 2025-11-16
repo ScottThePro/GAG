@@ -1,5 +1,5 @@
 --version
---2.20
+--2.21
 
 local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 
@@ -740,7 +740,7 @@ local function AutoSubmitFruitEventLoop()
 end
 
 ------------------------------------------------Auto Craft seed event function
-local function AutoCraftSeedEventItem(selectedItem)
+local function AutoCraftingSeedEventItem(selectedItem)
     if not selectedItem or selectedItem == "" then
         warn("No item selected for crafting!")
         return
@@ -762,7 +762,7 @@ local function AutoCraftSeedEventItem(selectedItem)
 
     print("Successfully sent craft request for:", selectedItem)
 end
-local function AutoCraftGearEventItem(selectedItem)
+local function AutoCraftingGearEventItem(selectedItem)
     if not selectedItem or selectedItem == "" then
         warn("No item selected for crafting!")
         return
@@ -784,7 +784,7 @@ local function AutoCraftGearEventItem(selectedItem)
 
     print("Successfully sent craft request for:", selectedItem)
 end
-local function AutoCraftPetEventItem(selectedItem)
+local function AutoCraftingPetEventItem(selectedItem)
     if not selectedItem or selectedItem == "" then
         warn("No item selected for crafting!")
         return
@@ -807,7 +807,7 @@ local function AutoCraftPetEventItem(selectedItem)
     print("Successfully sent craft request for:", selectedItem)
 end
 
-local function AutoCraftCosmeticEventItem(selectedItem)
+local function AutoCraftingCosmeticEventItem(selectedItem)
     if not selectedItem or selectedItem == "" then
         warn("No item selected for crafting!")
         return
@@ -1032,7 +1032,7 @@ local AutoCraftingEventSeedToggle = EventTab:CreateToggle({
     Callback = function(Value)
         AutoCraftingEventSeed = Value
         if AutoCraftingEventSeed then
-            AutoCraftSeedEventItem(SelectedEventSeedItems)
+            AutoCraftingSeedEventItem(SelectedEventSeedItems)
         end
     end
 })
@@ -1059,7 +1059,7 @@ local AutoCraftingEventGearToggle = EventTab:CreateToggle({
     Callback = function(Value)
         AutoCraftingEventGear = Value
         if AutoCraftingEventGear then
-            AutoCraftEventGearItems(SelectedEventGearItems)
+            AutoCraftingEventGearItem(SelectedEventGearItems)
         end
     end
 })
@@ -1085,7 +1085,7 @@ local AutoCraftingEventPetToggle = EventTab:CreateToggle({
     Callback = function(Value)
         AutoCraftingEventPet = Value
         if AutoCraftingEventPet then
-	    	AutoCraftEventPetItems(SelectedEventPetItems)
+	    	AutoCraftingEventPetItem(SelectedEventPetItems)
         end
     end
 })
@@ -1111,7 +1111,7 @@ local AutoCraftingEventCosmeticToggle = EventTab:CreateToggle({
     Callback = function(Value)
         AutoCraftingEventCosmetic = Value
         if AutoCraftingEventCosmetic then
-            AutoCraftEventCosmeticItems(SelectedEventCosmeticItems)
+            AutoCraftingEventCosmeticItem(SelectedEventCosmeticItems)
         end
     end
 })
