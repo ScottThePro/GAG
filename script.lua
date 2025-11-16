@@ -728,7 +728,7 @@ end
 -- AUTO LOOP
 ---------------------------------------------------------
 RunService.Heartbeat:Connect(function()
-    if not AutoCraftingSeed then return end
+    if not AutoCraftingEventSeed then return end
 
     local workbench = GetSeedWorkbench()
     if not workbench then
