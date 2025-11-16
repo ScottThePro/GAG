@@ -1,5 +1,5 @@
 --version
---2.08
+--2.09
 
 local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 
@@ -723,7 +723,7 @@ end
 
 -- Main autocraft loop
 RunService.Heartbeat:Connect(function()
-    if not AutoCraftEventSeed then return end
+    if not AutoCraftingEventSeed then return end
 
     local workbench = GetSeedWorkbench()
     if not workbench then
@@ -746,7 +746,7 @@ end)
 
 -- Public toggle function YOU call
 function AutoCraftSeed(enable)
-    AutoCraftEventSeed = enable
+    AutoCraftingEventSeed = enable
     print("AutoCraftSeed:", enable and "ON" or "OFF")
 
     if enable then
@@ -1011,24 +1011,24 @@ local AutoCraftingEventSeedDropdown = EventTab:CreateDropdown({
 end
 end,
 })
-local AutoCraftEventGearToggle = EventTab:CreateToggle({
+local AutoCraftingEventGearToggle = EventTab:CreateToggle({
     Name = "Auto Craft Gear",
     CurrentValue = false,
     Flag = "AutoCraftEventGearToggle",
     Callback = function(Value)
-        AutoCraftEventGear = Value
-        if AutoCraftEventGear then
+        AutoCraftingEventGear = Value
+        if AutoCraftingEventGear then
             --AutoSubmitFruitEventLoop()
         end
     end
 })
 
-local AutoCraftEventGearDropdown = EventTab:CreateDropdown({
+local AutoCraftingEventGearDropdown = EventTab:CreateDropdown({
 	Name = "Select Gear",
 	Options = {"Smith Treat", "Pet Shard Forger", "Smith Hammer of Harvest", "Thundelbringer" },
 	CurrentOption = {"Olive"}, -- start empty for multi-select
 	MultipleOptions = false,
-	Flag = "AutoCraftEventGearDropdown",
+	Flag = "AutoCraftingEventGearDropdown",
 	Callback = function(Options)
     if type(Options) == "table" then
         SelectedEventGearItems = Options
@@ -1037,24 +1037,24 @@ local AutoCraftEventGearDropdown = EventTab:CreateDropdown({
     end
 end,
 })
-local AutoCraftEventPetToggle = EventTab:CreateToggle({
+local AutoCraftingEventPetToggle = EventTab:CreateToggle({
     Name = "Auto Craft Pet",
     CurrentValue = false,
-    Flag = "AutoCraftEventPetToggle",
+    Flag = "AutoCraftingEventPetToggle",
     Callback = function(Value)
-        AutoCraftEventPet = Value
-        if AutoCraftEventPet then
+        AutoCraftingEventPet = Value
+        if AutoCraftingEventPet then
             --AutoSubmitFruitEventLoop()
         end
     end
 })
 
-local AutoCraftEventPetDropdown = EventTab:CreateDropdown({
+local AutoCraftingEventPetDropdown = EventTab:CreateDropdown({
 	Name = "Select Pet",
 	Options = {"Gem Egg", "Smithing Dog", "Cheetah" },
 	CurrentOption = {"Olive"}, -- start empty for multi-select
 	MultipleOptions = false,
-	Flag = "AutoCraftEventPetDropdown",
+	Flag = "AutoCraftingEventPetDropdown",
 	Callback = function(Options)
     if type(Options) == "table" then
         SelectedEventPetItems = Options
@@ -1063,24 +1063,24 @@ local AutoCraftEventPetDropdown = EventTab:CreateDropdown({
     end
 end,
 })
-local AutoCraftEventCosmeticToggle = EventTab:CreateToggle({
+local AutoCraftingEventCosmeticToggle = EventTab:CreateToggle({
     Name = "Auto Craft Cosmetic",
     CurrentValue = false,
-    Flag = "AutoCraftEventCosmeticToggle",
+    Flag = "AutoCraftingEventCosmeticToggle",
     Callback = function(Value)
-        AutoCraftEventCosmetic = Value
-        if AutoCraftEventCosmetic then
+        AutoCraftingEventCosmetic = Value
+        if AutoCraftingEventCosmetic then
             --AutoSubmitFruitEventLoop()
         end
     end
 })
 
-local AutoCraftEventCosmeticDropdown = EventTab:CreateDropdown({
+local AutoCraftingEventCosmeticDropdown = EventTab:CreateDropdown({
 	Name = "Select Cosmetic",
 	Options = {"Anvil", "Tools Rack", "Coal Box", "Blacksmith Grinder", "Shield Statue", "Horse Shoe Magnet" },
 	CurrentOption = {"Olive"}, -- start empty for multi-select
 	MultipleOptions = false,
-	Flag = "AutoCraftEventCosmeticDropdown",
+	Flag = "AutoCraftingEventCosmeticDropdown",
 	Callback = function(Options)
     if type(Options) == "table" then
         SelectedEventCosmeticItems = Options
