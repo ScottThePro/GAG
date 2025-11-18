@@ -1,5 +1,5 @@
 --version
---2.31
+--2.32
 
 local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 
@@ -52,6 +52,8 @@ local SelectedEventSeedItems = {}
 local SelectedEventGearItems = {}
 local SelectedEventPetItems = {}
 local SelectedEventCosmeticItems = {}
+local SelectedFruitName = "Carrot"
+
 --Harvesting crop variables
 local AutoHarvestEnabled = false
 local SelectedHarvestSeeds = {}
@@ -130,6 +132,50 @@ local function GetAllSeedNames()
 	table.sort(seeds)
 
     return seeds
+end
+
+--Get all gear names from GearData modulescript which is how the game does it
+local function GetAllGearNames()
+    local gearNames = {}
+
+    -- Navigate safely to ReplicatedStorage.Data.GearData
+    local dataFolder = ReplicatedStorage:FindFirstChild("Data")
+    if not dataFolder then
+        warn("Data folder not found!")
+        return gearNames
+    end
+
+    local gearDataFolder = dataFolder:FindFirstChild("GearData")
+    if not gearDataFolder then
+        warn("GearData folder not found!")
+        return gearNames
+    end
+
+    -- Recursive search for ModuleScripts
+    local function scan(folder)
+        for _, child in ipairs(folder:GetChildren()) do
+            
+            if child:IsA("ModuleScript") then
+                local success, moduleData = pcall(require, child)
+                if success and typeof(moduleData) == "table" then
+                    for key, _ in pairs(moduleData) do
+                        table.insert(gearNames, tostring(key))
+                    end
+                end
+
+            elseif child:IsA("Folder") then
+                scan(child)
+            end
+        end
+    end
+
+    -- Begin scanning
+    scan(gearDataFolder)
+
+    -- Sort alphabetically
+    table.sort(gearNames)
+
+    return gearNames
 end
 
 
@@ -540,6 +586,12 @@ local function SubmitAllGearEvent()
         return
     end
 
+    -- Make sure SelectedGearName exists
+    if not SelectedGearName or SelectedGearName == "" then
+        warn("No gear selected to submit!")
+        return
+    end
+
     -- Find the watering can in backpack
     local wateringCanTool
     for _, item in ipairs(backpack:GetChildren()) do
@@ -573,16 +625,16 @@ local function SubmitAllGearEvent()
         return
     end
 
-    -- Fire the remote
+    -- Fire the remote with the selected gear
     success, err = pcall(function()
-        remote:FireServer()
+        remote:FireServer(SelectedGearName)
     end)
     if not success then
         warn("Failed to submit gear:", err)
         return
     end
 
-    print("Successfully equipped watering can and submitted gear!")
+    print("Successfully submitted gear:", SelectedGearName)
 end
 
 local function SubmitAllEggEvent()
@@ -645,93 +697,58 @@ end
 
 local function SubmitAllFruitEvent()
     local player = Players.LocalPlayer
-    if not player then
-        warn("No local player found!")
+    if not player then return end
+
+    if not SelectedFruitName then
+        warn("No fruit selected in dropdown!")
         return
     end
 
     local backpack = player:FindFirstChild("Backpack")
-    if not backpack then
-        warn("Backpack not found!")
-        return
-    end
+    if not backpack then return end
 
-    -- Get all allowed seed names
-    local seedNames = GetAllSeedNames()
-    if not seedNames or #seedNames == 0 then
-        warn("No seed names returned from GetAllSeedNames()!")
-        return
-    end
+    local selectedLower = SelectedFruitName:lower()
 
-    -- Convert seed names to lowercase for easier comparison
-    local seedLookup = {}
-    for _, name in ipairs(seedNames) do
-        seedLookup[name:lower()] = true
-    end
+    -- Find matching fruit in backpack
+    local fruitTool = nil
+    for _, tool in ipairs(backpack:GetChildren()) do
+        if tool:IsA("Tool") then
+            local name = tool.Name:lower()
 
-    -- Find a fruit in backpack
-    local fruitTool
-    for _, item in ipairs(backpack:GetChildren()) do
-        if item:IsA("Tool") then
-            local itemNameLower = item.Name:lower()
-
-            -- Skip seeds
-            if itemNameLower:find("seed") then
-                continue
+            -- must match selected fruit EXACTLY (partial allowed)
+            if name:find(selectedLower) and not name:find("seed") and not name:find("%[age%s*%d+%]") then
+                fruitTool = tool
+                break
             end
-
-            -- Skip pets
-            if itemNameLower:find("%[age%s*%d+%]") then
-                continue
-            end
-
-            -- Check if any seed name exists inside item name
-            for seedName, _ in pairs(seedLookup) do
-                if itemNameLower:find(seedName:lower()) then
-                    fruitTool = item
-                    break
-                end
-            end
-
-            if fruitTool then break end
         end
     end
 
     if not fruitTool then
-        warn("No matching fruit found in backpack!")
+        warn("You do not have the selected fruit:", SelectedFruitName)
         return
     end
 
-    -- Equip the fruit
-    local success, err = pcall(function()
+    -- Equip it
+    local ok, err = pcall(function()
         player.Character.Humanoid:EquipTool(fruitTool)
     end)
-    if not success then
-        warn("Failed to equip fruit:", err)
-        return
-    end
+    if not ok then return end
 
-    -- Locate the SubmitFruit remote safely
-    local remote = ReplicatedStorage:FindFirstChild("GameEvents")
-        and ReplicatedStorage.GameEvents:FindFirstChild("SmithingEvent")
-        and ReplicatedStorage.GameEvents.SmithingEvent:FindFirstChild("Smithing_SubmitFruitRE")
+    -- Fire submit remote
+    local remote =
+        ReplicatedStorage:FindFirstChild("GameEvents") and
+        ReplicatedStorage.GameEvents:FindFirstChild("SmithingEvent") and
+        ReplicatedStorage.GameEvents.SmithingEvent:FindFirstChild("Smithing_SubmitFruitRE")
 
     if not remote then
-        warn("Smithing_SubmitFruitRE remote not found!")
+        warn("Fruit submit remote missing!")
         return
     end
 
-    -- Fire the remote
-    success, err = pcall(function()
-        remote:FireServer()
-    end)
-    if not success then
-        warn("Failed to submit fruit:", err)
-        return
-    end
-
-    print("Successfully equipped fruit and submitted it! ->", fruitTool.Name)
+    remote:FireServer()
+    print("Submitted fruit:", fruitTool.Name)
 end
+
 
 
 
@@ -756,7 +773,7 @@ local function AutoSubmitFruitEventLoop()
     task.spawn(function()
         while AutoSubmitFruitEvent do
             SubmitAllFruitEvent()
-            task.wait(3) -- wait 3 seconds between submissions to avoid spam
+            task.wait(3)
         end
     end)
 end
@@ -1046,6 +1063,17 @@ local EventTab = Window:CreateTab("Event", 4483362458) -- Title, Image
 --AEvent section
 local EventSection = EventTab:CreateSection("Smithing Event Submitting")
 --Auto Buy Event toggle
+--Auto submit gear to the event drop down menu
+local AutoSubmitFruitEventDropdown = EventTab:CreateDropdown({
+    Name = "Select Gear",
+    Options = GetAllGearNames(),
+    CurrentOption = {},
+    MultipleOptions = false,
+    Flag = "AutoSubmitGearEventDropdown",
+    Callback = function(Option)
+        SelectedGearName = Option[1]   -- store selected gear name
+    end,
+})
 --Auto submit gear to the event toggle
 local AutoSubmitGearEventToggle = EventTab:CreateToggle({
     Name = "Auto Submit Gear",
@@ -1070,6 +1098,18 @@ local AutoSubmitEggEventToggle = EventTab:CreateToggle({
         end
     end
 })
+
+--Auto submit fruit to the event drop down menu
+local AutoSubmitFruitEventDropdown = EventTab:CreateDropdown({
+    Name = "Select Fruit",
+    Options = GetAllSeedNames(),
+    CurrentOption = {},
+    MultipleOptions = false,
+    Flag = "AutoSubmitFruitEventDropdown",
+    Callback = function(Option)
+        SelectedFruitName = Option[1]   -- store selected fruit name
+    end,
+})
 --Auto submit fruit to the event toggle
 local AutoSubmitFruitEventToggle = EventTab:CreateToggle({
     Name = "Auto Submit Fruit",
@@ -1077,7 +1117,7 @@ local AutoSubmitFruitEventToggle = EventTab:CreateToggle({
     Flag = "AutoSubmitFruitEventToggle",
     Callback = function(Value)
         AutoSubmitFruitEvent = Value
-        if AutoSubmitFruitEvent then
+        if Value then
             AutoSubmitFruitEventLoop()
         end
     end
