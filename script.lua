@@ -1,5 +1,5 @@
 --version
---2.33
+--2.34
 
 local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 
@@ -959,83 +959,112 @@ local function AutoCraftingEventCosmeticItem(selectedItem)
 end
 
 -------------------------------------------------------------------------------Garden functions
-
-local function CanHarvest(Plant): boolean?
+-- Safe check if plant can be harvested
+local function CanHarvest(Plant)
     local Prompt = Plant:FindFirstChild("ProximityPrompt", true)
-	if not Prompt then return end
-    if not Prompt.Enabled then return end
-
+    if not Prompt then return false end
+    if not Prompt.Enabled then return false end
     return true
 end
 
+-- Only harvest selected fruits
 local function IsFruitWanted(Plant)
     local Variant = Plant:FindFirstChild("Variant")
     if not Variant then return false end
+    if not Variant.Value then return false end
+
     return HarvestableFruits[Variant.Value] == true
 end
 
-local function CollectHarvestable(Parent, Plants, IgnoreDistance: boolean?)
-	local Character = LocalPlayer.Character
-	local PlayerPosition = Character:GetPivot().Position
+-- Safe way to get plant position (supports Model or BasePart)
+local function GetPlantPosition(Plant)
+    if Plant:IsA("Model") then
+        local ok, pivot = pcall(function()
+            return Plant:GetPivot().Position
+        end)
+        if ok then return pivot end
+    end
 
-	for _, Plant in next, Parent:GetChildren() do
-		
-		-- Fruits inside a tree (recursive)
-		local Fruits = Plant:FindFirstChild("Fruits")
-		if Fruits then
-			CollectHarvestable(Fruits, Plants, IgnoreDistance)
-		end
+    if Plant:IsA("BasePart") then
+        return Plant.Position
+    end
 
-		-- Distance check
-		local PlantPosition = Plant:GetPivot().Position
-		local Distance = (PlayerPosition - PlantPosition).Magnitude
-		if not IgnoreDistance and Distance > 15 then continue end
-
-		-- Skip variants we want to ignore globally
-		local Variant = Plant:FindFirstChild("Variant")
-		if Variant and HarvestIgnores[Variant.Value] then continue end
-
-		-- ⭐ NEW: Only harvest fruits listed in HarvestableFruits
-		if not IsFruitWanted(Plant) then continue end
-
-		-- Check if the prompt exists and is harvestable
-		if CanHarvest(Plant) then
-			table.insert(Plants, Plant)
-		end
-	end
-
-	return Plants
+    return nil
 end
 
-local function GetHarvestablePlants(IgnoreDistance: boolean?)
+-- Collect harvestable fruits
+local function CollectHarvestable(Parent, Plants, IgnoreDistance)
+    local Character = LocalPlayer.Character
+    if not Character then return Plants end
+
+    local PlayerPos = Character:GetPivot().Position
+
+    for _, Plant in next, Parent:GetChildren() do
+
+        -- Recurse inside a "Fruits" folder
+        local Fruits = Plant:FindFirstChild("Fruits")
+        if Fruits then
+            CollectHarvestable(Fruits, Plants, IgnoreDistance)
+        end
+
+        -- Get safe plant position
+        local PlantPos = GetPlantPosition(Plant)
+        if not PlantPos then continue end
+
+        -- Distance filtering
+        local Distance = (PlayerPos - PlantPos).Magnitude
+        if not IgnoreDistance and Distance > 15 then continue end
+
+        -- Ignore global variants
+        local Variant = Plant:FindFirstChild("Variant")
+        if Variant and Variant.Value and HarvestIgnores[Variant.Value] then
+            continue
+        end
+
+        -- Only harvest user-selected fruits
+        if not IsFruitWanted(Plant) then continue end
+
+        -- Valid harvest prompt?
+        if CanHarvest(Plant) then
+            table.insert(Plants, Plant)
+        end
+    end
+
+    return Plants
+end
+
+-- Get list of harvestable plants
+local function GetHarvestablePlants(IgnoreDistance)
     local Plants = {}
     CollectHarvestable(PlantsPhysical, Plants, IgnoreDistance)
     return Plants
 end
 
-local function HarvestPlants(Parent: Model)
-	local Plants = GetHarvestablePlants()
+-- Harvest all applicable plants
+local function HarvestPlants()
+    local Plants = GetHarvestablePlants()
     for _, Plant in next, Plants do
         HarvestPlant(Plant)
     end
 end
 
+
+-- AUTO-HARVEST LOOP
 function AutoHarvestLoop()
     while AutoHarvest do
-        -- Get harvestable plants (distance check ON)
         local plants = GetHarvestablePlants(false)
 
         for _, plant in ipairs(plants) do
-            -- Check if player selected this fruit in dropdown
             if IsFruitWanted(plant) then
                 HarvestPlant(plant)
-                task.wait(0.15) -- prevents spamming the remote
+                task.wait(0.15)
             end
         end
 
-        task.wait(0.3) -- smooth loop, doesn’t lag or spam remote
+        task.wait(0.3)
     end
 end
+
 
 -------------------------------------------------------------------------------Draw our options
 -- Auto Buy Tab
@@ -1383,7 +1412,7 @@ local HarvestFruitDropdown = GardenTab:CreateDropdown({
         end
     end
 })
-local HarvestToggle = EventTab:CreateToggle({
+local HarvestToggle = GardenTab:CreateToggle({
     Name = "Auto Harvest",
     CurrentValue = false,
     Flag = "AutoHarvestToggle",
