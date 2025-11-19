@@ -1,5 +1,5 @@
 --version
---2.34
+--2.35
 
 local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 
@@ -23,6 +23,11 @@ local GameInfo = MarketplaceService:GetProductInfo(game.PlaceId)
 local GameEvents = ReplicatedStorage.GameEvents
 local CraftingEvent = GameEvents.CraftingGlobalObjectService
 local Farms = workspace.Farm
+
+local MyFarm = GetFarm(LocalPlayer.Name)
+local MyImportant = MyFarm.Important
+local PlantLocations = MyImportant.Plant_Locations
+local PlantsPhysical = MyImportant.Plants_Physical
 
 --global variables
 -- seed variables 
@@ -135,6 +140,28 @@ local function CollectSeedsFromParent(Parent, Seeds: table)
 	end
 end
 --this gets fruit from backpack fruit have a child called Item_String which is how we tell fruits in out backpack
+local function GetFarms()
+	return Farms:GetChildren()
+end
+
+local function GetFarmOwner(Farm: Folder): string
+	local Important = Farm.Important
+	local Data = Important.Data
+	local Owner = Data.Owner
+
+	return Owner.Value
+end
+
+local function GetFarm(PlayerName: string): Folder?
+	local Farms = GetFarms()
+	for _, Farm in next, Farms do
+		local Owner = GetFarmOwner(Farm)
+		if Owner == PlayerName then
+			return Farm
+		end
+	end
+    return
+end
 local function CollectCropsFromParent(Parent, Crops: table)
 	for _, Tool in next, Parent:GetChildren() do
 		local Name = Tool:FindFirstChild("Item_String")
