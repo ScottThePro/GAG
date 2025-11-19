@@ -1,5 +1,5 @@
 --version
---2.35
+--2.36
 
 local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 
@@ -23,11 +23,6 @@ local GameInfo = MarketplaceService:GetProductInfo(game.PlaceId)
 local GameEvents = ReplicatedStorage.GameEvents
 local CraftingEvent = GameEvents.CraftingGlobalObjectService
 local Farms = workspace.Farm
-
-local MyFarm = GetFarm(LocalPlayer.Name)
-local MyImportant = MyFarm.Important
-local PlantLocations = MyImportant.Plant_Locations
-local PlantsPhysical = MyImportant.Plants_Physical
 
 --global variables
 -- seed variables 
@@ -162,6 +157,13 @@ local function GetFarm(PlayerName: string): Folder?
 	end
     return
 end
+
+
+local MyFarm = GetFarm(LocalPlayer.Name)
+local MyImportant = MyFarm.Important
+local PlantLocations = MyImportant.Plant_Locations
+local PlantsPhysical = MyImportant.Plants_Physical
+
 local function CollectCropsFromParent(Parent, Crops: table)
 	for _, Tool in next, Parent:GetChildren() do
 		local Name = Tool:FindFirstChild("Item_String")
