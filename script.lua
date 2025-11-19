@@ -1,5 +1,5 @@
 --version
---2.32
+--2.33
 
 local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 
@@ -55,9 +55,12 @@ local SelectedEventCosmeticItems = {}
 local SelectedFruitName = "Carrot"
 
 --Harvesting crop variables
-local AutoHarvestEnabled = false
-local SelectedHarvestSeeds = {}
+local AutoHarvest = false
 local HarvestIgnores = {}
+local HarvestableFruits = {}
+
+--local player variables
+local OwnedSeeds = {}
 
 local Window = Rayfield:CreateWindow({
    Name = GameInfo.Name .. " : Cheat Engine",
@@ -111,7 +114,54 @@ local function findDescendantByName(parent, name)
     return nil
 end
 
+--Get seed info function
+local function GetSeedInfo(Seed: Tool): number?
+	local PlantName = Seed:FindFirstChild("Plant_Name")
+	local Count = Seed:FindFirstChild("Numbers")
+	if not PlantName then return end
 
+	return PlantName.Value, Count.Value
+end
+--get seeds from part function
+local function CollectSeedsFromParent(Parent, Seeds: table)
+	for _, Tool in next, Parent:GetChildren() do
+		local Name, Count = GetSeedInfo(Tool)
+		if not Name then continue end
+
+		Seeds[Name] = {
+            Count = Count,
+            Tool = Tool
+        }
+	end
+end
+--this gets fruit from backpack fruit have a child called Item_String which is how we tell fruits in out backpack
+local function CollectCropsFromParent(Parent, Crops: table)
+	for _, Tool in next, Parent:GetChildren() do
+		local Name = Tool:FindFirstChild("Item_String")
+		if not Name then continue end
+
+		table.insert(Crops, Tool)
+	end
+end
+--this gets seeds that we have in our backpack and stores them in the OwnedSeeds table
+local function GetOwnedSeeds(): table
+	local Character = LocalPlayer.Character
+	
+	CollectSeedsFromParent(Backpack, OwnedSeeds)
+	CollectSeedsFromParent(Character, OwnedSeeds)
+
+	return OwnedSeeds
+end
+-- get crops from parent function this returns fruit in our backpack and character
+local function GetInvCrops(): table
+	local Character = LocalPlayer.Character
+	
+	local Crops = {}
+	CollectCropsFromParent(Backpack, Crops)
+	CollectCropsFromParent(Character, Crops)
+
+	return Crops
+end
 --Get all seed names function
 --This gets all seed names from the SeedData ModuleScript which is how to game does it
 local function GetAllSeedNames()
@@ -907,6 +957,86 @@ local function AutoCraftingEventCosmeticItem(selectedItem)
 
     print("Successfully sent craft request for:", selectedItem)
 end
+
+-------------------------------------------------------------------------------Garden functions
+
+local function CanHarvest(Plant): boolean?
+    local Prompt = Plant:FindFirstChild("ProximityPrompt", true)
+	if not Prompt then return end
+    if not Prompt.Enabled then return end
+
+    return true
+end
+
+local function IsFruitWanted(Plant)
+    local Variant = Plant:FindFirstChild("Variant")
+    if not Variant then return false end
+    return HarvestableFruits[Variant.Value] == true
+end
+
+local function CollectHarvestable(Parent, Plants, IgnoreDistance: boolean?)
+	local Character = LocalPlayer.Character
+	local PlayerPosition = Character:GetPivot().Position
+
+	for _, Plant in next, Parent:GetChildren() do
+		
+		-- Fruits inside a tree (recursive)
+		local Fruits = Plant:FindFirstChild("Fruits")
+		if Fruits then
+			CollectHarvestable(Fruits, Plants, IgnoreDistance)
+		end
+
+		-- Distance check
+		local PlantPosition = Plant:GetPivot().Position
+		local Distance = (PlayerPosition - PlantPosition).Magnitude
+		if not IgnoreDistance and Distance > 15 then continue end
+
+		-- Skip variants we want to ignore globally
+		local Variant = Plant:FindFirstChild("Variant")
+		if Variant and HarvestIgnores[Variant.Value] then continue end
+
+		-- ⭐ NEW: Only harvest fruits listed in HarvestableFruits
+		if not IsFruitWanted(Plant) then continue end
+
+		-- Check if the prompt exists and is harvestable
+		if CanHarvest(Plant) then
+			table.insert(Plants, Plant)
+		end
+	end
+
+	return Plants
+end
+
+local function GetHarvestablePlants(IgnoreDistance: boolean?)
+    local Plants = {}
+    CollectHarvestable(PlantsPhysical, Plants, IgnoreDistance)
+    return Plants
+end
+
+local function HarvestPlants(Parent: Model)
+	local Plants = GetHarvestablePlants()
+    for _, Plant in next, Plants do
+        HarvestPlant(Plant)
+    end
+end
+
+function AutoHarvestLoop()
+    while AutoHarvest do
+        -- Get harvestable plants (distance check ON)
+        local plants = GetHarvestablePlants(false)
+
+        for _, plant in ipairs(plants) do
+            -- Check if player selected this fruit in dropdown
+            if IsFruitWanted(plant) then
+                HarvestPlant(plant)
+                task.wait(0.15) -- prevents spamming the remote
+            end
+        end
+
+        task.wait(0.3) -- smooth loop, doesn’t lag or spam remote
+    end
+end
+
 -------------------------------------------------------------------------------Draw our options
 -- Auto Buy Tab
 local AutoBuyTab = Window:CreateTab("Auto Buy", 4483362458) -- Title, Image
@@ -1236,10 +1366,34 @@ local GardenSection = GardenTab:CreateSection("Harvest")
 local HarvestFruitDropdown = GardenTab:CreateDropdown({
     Name = "Select Fruit",
     Options = GetAllSeedNames(), -- populate with seed names
-    CurrentOption = nil,
-    MultipleOptions = false,
-    Callback = function(selected)
-        print("Selected Seed:", selected)
+    CurrentOption = {},
+    MultipleOptions = true,
+    Callback = function(selectedList)
+        -- Reset table
+        HarvestableFruits = {}
+
+        -- Fill table based on selections
+        for _, fruitName in ipairs(selectedList) do
+            HarvestableFruits[fruitName] = true
+        end
+
+        print("Updated Harvestable Fruits:")
+        for fruit, _ in pairs(HarvestableFruits) do
+            print(" -", fruit)
+        end
+    end
+})
+local HarvestToggle = EventTab:CreateToggle({
+    Name = "Auto Harvest",
+    CurrentValue = false,
+    Flag = "AutoHarvestToggle",
+
+    Callback = function(Value)
+        AutoHarvest = Value
+
+        if AutoHarvest then
+            task.spawn(AutoHarvestLoop)
+        end
     end
 })
 
