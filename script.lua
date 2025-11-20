@@ -1,5 +1,5 @@
 --version
---2.47
+--2.48
 
 local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 
@@ -439,7 +439,7 @@ end
 
 
 --pet egg stock functions -- Get pet/egg stock functions
-ocal function GetEggs(): table
+local function GetEggs(): table
     local petShop = PlayerGui:FindFirstChild("PetShop_UI")
     if not petShop then return {} end
 
