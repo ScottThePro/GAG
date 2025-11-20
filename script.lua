@@ -1,5 +1,5 @@
 --version
---2.48
+--2.50
 
 local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 
@@ -56,9 +56,9 @@ local SelectedEventSeedItems = {}
 local SelectedEventGearItems = {}
 local SelectedEventPetItems = {}
 local SelectedEventCosmeticItems = {}
-local SelectedFruitName = "Carrot"
-local SelectedGearName = "Watering Can"
-local SelectedPetName = "Common Egg"
+local SelectedFruitName = {}
+local SelectedGearName = {}
+local SelectedPetName = {}
 
 --Harvesting crop variables
 local AutoHarvest = false
@@ -487,17 +487,17 @@ local function BuyAllSelectedEggs()
     AutoBuyEggsThread = task.spawn(function()
         while AutoBuyEggs do
             local eggsToBuy = {}
-            local eggsStock = GetEggs() -- use patched function
+            local eggsStock = GetEggs() -- now a dictionary: {eggName = stock}
 
             if table.find(SelectedEggs, "All Eggs") then
-                -- Get all eggs that have stock > 0
+                -- Buy all eggs with stock > 0
                 for eggName, stock in pairs(eggsStock) do
                     if eggName ~= "All Eggs" and stock > 0 then
                         table.insert(eggsToBuy, eggName)
                     end
                 end
             else
-                -- Only buy selected eggs if they are in stock
+                -- Buy only selected eggs if stock > 0
                 for _, eggName in ipairs(SelectedEggs) do
                     local stock = eggsStock[eggName] or 0
                     if stock > 0 then
@@ -506,18 +506,29 @@ local function BuyAllSelectedEggs()
                 end
             end
 
-            -- Buy eggs
+            -- Fire BuyEgg for each egg
             for _, eggName in ipairs(eggsToBuy) do
                 if not AutoBuyEggs then return end
+                -- buy only 1 per tick; some games require separate fires per stock
                 BuyEgg(eggName)
                 task.wait(0.2)
             end
 
-            task.wait(3)
+            task.wait(3) -- wait before next loop
         end
     end)
 end
+local function GetEggsDropdownOptions()
+    local eggs = GetEggs() -- returns dictionary {eggName = stock}
+    local eggNames = {}
 
+    for name, stock in pairs(eggs) do
+        table.insert(eggNames, name)
+    end
+
+    table.sort(eggNames) -- optional: sort alphabetically
+    return eggNames
+end
 
 --// Get Travel Merchant Stock Function
 local function GetTravelMerchantItems(IgnoreNoStock: boolean?): table
@@ -1175,7 +1186,7 @@ local AutoBuyEggsToggle = AutoBuyTab:CreateToggle({
 --Auto Buy Egg Dropdown
 local AutoBuyEggDropdown = AutoBuyTab:CreateDropdown({
 	Name = "Select Eggs",
-	Options = GetEggs(),
+	Options = GetEggsDropdownOptions(),
 	CurrentOption = {}, -- start empty for multi-select
 	MultipleOptions = true,
 	Flag = "AutoBuyEggDropdown",
@@ -1257,7 +1268,7 @@ local AutoSubmitGearEventToggle = EventTab:CreateToggle({
 --Auto submit pet to the event dropdown menu
 local AutoSubmitPetEventDropdown = EventTab:CreateDropdown({
     Name = "Select Egg",
-    Options = GetEggs(),
+    Options = GetEggsDropdownOptions(),
     CurrentOption = {},
     MultipleOptions = false,
     Flag = "AutoSubmitPetEventDropdown",
