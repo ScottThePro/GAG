@@ -1,5 +1,5 @@
 --version
---2.45
+--2.46
 
 local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 
@@ -1086,9 +1086,9 @@ local AutoBuySeedToggle = AutoBuyTab:CreateToggle({
     Name = "Auto Buy Seeds",
     CurrentValue = false,
     Flag = "AutoBuySeedToggle",
-    Callback = function(value)
-        AutoBuySeeds = value
-        if value then
+    Callback = function(Value)
+        AutoBuySeeds = Value
+        if Value then
             BuyAllSelectedSeeds()
         else
             -- stops the loop immediately
@@ -1123,8 +1123,8 @@ local AutoBuyGearToggle = AutoBuyTab:CreateToggle({
     CurrentValue = false,
     Flag = "AutoBuyGearToggle",
     Callback = function(Value)
-        AutoBuyGear = value
-        if value then
+        AutoBuyGear = Value
+        if Value then
             BuyAllSelectedGear()
         else
             -- stops the loop immediately
@@ -1160,8 +1160,8 @@ local AutoBuyEggsToggle = AutoBuyTab:CreateToggle({
     CurrentValue = false,
     Flag = "AutoBuyEggToggle",
     Callback = function(Value)
-        AutoBuyEggs = value
-        if value then
+        AutoBuyEggs = Value
+        if Value then
             BuyAllSelectedEggs()
         else
             -- stops the loop immediately
@@ -1192,23 +1192,23 @@ end,
 --Auto Buy Travel Merchant
 local AutoBuyTravelMerchantSection = AutoBuyTab:CreateSection("Travel Merchant")
 
-
 --Auto Buy Event toggle
 local AutoBuyTravelMerchantToggle = AutoBuyTab:CreateToggle({
-	Name = "Auto Buy Travel Merchant",
-	CurrentValue = false,
-	Flag = "AutoBuyTravelMerchantToggle",
-	Callback = function(Value)
-		AutoBuyTravelMerchant = Value
-		if AutoBuyTravelMerchant then
-			task.spawn(function()
-				while AutoBuyTravelMerchant do
-					BuyAllSelectedTravelMerchantItems() -- calls our auto-buy function
-					task.wait(3) -- wait a few seconds between buys
-				end
-			end)
-		end
-	end,
+    Name = "Auto Buy Travel Merchant",
+    CurrentValue = false,
+    Flag = "AutoBuyTravelMerchantToggle",
+    Callback = function(Value)
+        AutoBuyTravelMerchant = Value
+        if Value then
+            BuyAllSelectedTravelMerchantItems()
+        else
+            -- stops the loop immediately
+            if AutoBuyTravelMerchantThread then
+                task.cancel(AutoBuyTravelMerchantThread)
+                AutoBuyTravelMerchantThread = nil
+            end
+        end
+    end
 })
 --Auto buy event dropdown
 local AutoBuyTravelMerchantDropdown = AutoBuyTab:CreateDropdown({
