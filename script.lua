@@ -1,5 +1,5 @@
 --version
---2.50
+--2.51
 
 local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 
@@ -435,9 +435,6 @@ local function BuyAllSelectedGear()
     end)
 end
 
-
-
-
 --pet egg stock functions -- Get pet/egg stock functions
 local function GetEggs(): table
     local petShop = PlayerGui:FindFirstChild("PetShop_UI")
@@ -458,21 +455,17 @@ local function GetEggs(): table
                and not name:match("UI")
                and not name:match("Layout")
             then
-                local stockLabel = child:FindFirstChild("Stock_Text")
-                local stockCount = 0
-                if stockLabel then
-                    stockCount = tonumber(stockLabel.Text) or 0
-                end
-                eggs[name] = stockCount
+                table.insert(eggs, name)
             end
         end
     end
 
-    -- Add "All Eggs" with a dummy stock of 0 (for dropdowns)
-    eggs["All Eggs"] = 0
+    -- Add "All Eggs" option for dropdowns
+    table.insert(eggs, "All Eggs")
 
     return eggs
 end
+
 
 -- Buy egg function
 local function BuyEgg(EggName)
@@ -487,37 +480,24 @@ local function BuyAllSelectedEggs()
     AutoBuyEggsThread = task.spawn(function()
         while AutoBuyEggs do
             local eggsToBuy = {}
-            local eggsStock = GetEggs() -- now a dictionary: {eggName = stock}
 
             if table.find(SelectedEggs, "All Eggs") then
-                -- Buy all eggs with stock > 0
-                for eggName, stock in pairs(eggsStock) do
-                    if eggName ~= "All Eggs" and stock > 0 then
-                        table.insert(eggsToBuy, eggName)
-                    end
-                end
+                eggsToBuy = GetEggs() -- just return all egg names
             else
-                -- Buy only selected eggs if stock > 0
-                for _, eggName in ipairs(SelectedEggs) do
-                    local stock = eggsStock[eggName] or 0
-                    if stock > 0 then
-                        table.insert(eggsToBuy, eggName)
-                    end
-                end
+                eggsToBuy = SelectedEggs
             end
 
-            -- Fire BuyEgg for each egg
             for _, eggName in ipairs(eggsToBuy) do
                 if not AutoBuyEggs then return end
-                -- buy only 1 per tick; some games require separate fires per stock
                 BuyEgg(eggName)
                 task.wait(0.2)
             end
 
-            task.wait(3) -- wait before next loop
+            task.wait(3)
         end
     end)
 end
+
 local function GetEggsDropdownOptions()
     local eggs = GetEggs() -- returns dictionary {eggName = stock}
     local eggNames = {}
