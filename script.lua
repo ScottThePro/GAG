@@ -1,5 +1,5 @@
 --version
---2.42
+--2.43
 
 local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 
@@ -1045,20 +1045,6 @@ function AutoHarvestLoop()
         end
     end)
 end
-local function WaitForGearData()
-    local dataFolder = ReplicatedStorage:WaitForChild("Data")
-    local gearDataFolder = dataFolder:WaitForChild("GearData")
-
-    -- Wait until at least one ModuleScript is inside GearData
-    repeat
-        task.wait(0.1)
-    until #gearDataFolder:GetChildren() > 0
-
-    return gearDataFolder
-end
-
--- Wait for modules to be ready
-WaitForGearData()
 
 -------------------------------------------------------------------------------Draw our options
 -- Auto Buy Tab
