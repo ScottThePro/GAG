@@ -1,5 +1,5 @@
 --version
---2.44
+--2.45
 
 local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 
@@ -390,37 +390,66 @@ end
 
 -- Buy all gear with proper thread control
 local function BuyAllSelectedGear()
-    if AutoBuyGearThread then task.cancel(AutoBuyGearThread) end
+    print("[DEBUG] Starting BuyAllSelectedGear")
+
+    if AutoBuyGearThread then
+        print("[DEBUG] Cancelling existing AutoBuyGearThread")
+        task.cancel(AutoBuyGearThread)
+    end
 
     AutoBuyGearThread = task.spawn(function()
         while AutoBuyGear do
+            print("[DEBUG] AutoBuyGear loop running")
+
             local gearToBuy = {}
 
             if table.find(SelectedGear, "All Gear") then
+                print("[DEBUG] 'All Gear' selected, fetching full stock")
                 gearToBuy = GetGearStock(true)
             else
+                print("[DEBUG] SelectedGear list:", SelectedGear)
                 for _, gearName in ipairs(SelectedGear) do
                     local stockCount = GearStock[gearName] or 0
+                    print("[DEBUG] Checking gear:", gearName, "Stock:", stockCount)
                     if stockCount > 0 then
                         table.insert(gearToBuy, gearName)
+                        print("[DEBUG] Adding to gearToBuy:", gearName)
+                    else
+                        print("[DEBUG] Stock 0 or nil for:", gearName)
                     end
                 end
             end
 
+            print("[DEBUG] Gear to buy this loop:", gearToBuy)
+
             for _, gearName in ipairs(gearToBuy) do
-                if not AutoBuyGear then return end
+                if not AutoBuyGear then 
+                    print("[DEBUG] AutoBuyGear disabled, exiting")
+                    return 
+                end
+
                 local stockCount = GearStock[gearName] or 0
+                print("[DEBUG] Buying", gearName, "StockCount:", stockCount)
+
                 for i = 1, stockCount do
-                    if not AutoBuyGear then return end
+                    if not AutoBuyGear then 
+                        print("[DEBUG] AutoBuyGear disabled during buy, exiting")
+                        return 
+                    end
+
+                    print("[DEBUG] Buying item:", gearName, "Attempt:", i)
                     BuyGear(gearName)
                     task.wait(0.1)
                 end
             end
 
+            print("[DEBUG] Loop finished, waiting 3 seconds")
             task.wait(3)
         end
+        print("[DEBUG] AutoBuyGear loop ended")
     end)
 end
+
 
 
 
