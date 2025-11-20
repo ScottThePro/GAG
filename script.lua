@@ -304,32 +304,38 @@ local function BuySeed(Seed: string)
 	GameEvents.BuySeedStock:FireServer("Shop", Seed)
 end
 local function BuyAllSelectedSeeds()
-    local seedsToBuy = {}
+    task.spawn(function()
+        local seedsToBuy = {}
 
-    -- If "All Seeds" was chosen, get the full stock list with stock > 0
-    if table.find(SelectedSeeds, "All Seeds") then
-        seedsToBuy = GetSeedStock(true) -- only seeds with stock
-    else
-        -- Only keep selected seeds that have stock
-        for _, seedName in ipairs(SelectedSeeds) do
+        -- If "All Seeds" was chosen, get full stock list
+        if table.find(SelectedSeeds, "All Seeds") then
+            seedsToBuy = GetSeedStock(true)
+        else
+            for _, seedName in ipairs(SelectedSeeds) do
+                local stockCount = SeedStock[seedName] or 0
+                if stockCount > 0 then
+                    table.insert(seedsToBuy, seedName)
+                end
+            end
+        end
+
+        -- Buy loop
+        for _, seedName in ipairs(seedsToBuy) do
+            -- Stop immediately if toggle off
+            if not AutoBuySeeds then return end
+
             local stockCount = SeedStock[seedName] or 0
-            if stockCount > 0 then
-                table.insert(seedsToBuy, seedName)
-            end
-        end
-    end
 
-    -- Loop through each selected seed and buy according to its stock
-    for _, seedName in ipairs(seedsToBuy) do
-        local stockCount = SeedStock[seedName] or 0
-        if stockCount > 0 then
             for i = 1, stockCount do
+                if not AutoBuySeeds then return end
+
                 BuySeed(seedName)
-                task.wait(0.1) -- slight delay for safety
+                task.wait(0.1)
             end
         end
-    end
+    end)
 end
+
 
 
 --Get Gear Stock Functions
@@ -377,29 +383,40 @@ local function BuyGear(GearName)
 end
 --Buy all selected gear function
 local function BuyAllSelectedGear()
-    local gearToBuy = {}
+    task.spawn(function()
+        local gearToBuy = {}
 
-    if table.find(SelectedGear, "All Gear") then
-        gearToBuy = GetGearStock(true)
-    else
-        for _, gearName in ipairs(SelectedGear) do
-            local stockCount = GearStock[gearName] or 0
-            if stockCount > 0 then
-                table.insert(gearToBuy, gearName)
+        -- If "All Gear" was selected, get everything with stock > 0
+        if table.find(SelectedGear, "All Gear") then
+            gearToBuy = GetGearStock(true)
+        else
+            -- Only buy selected gear with stock
+            for _, gearName in ipairs(SelectedGear) do
+                local stockCount = GearStock[gearName] or 0
+                if stockCount > 0 then
+                    table.insert(gearToBuy, gearName)
+                end
             end
         end
-    end
 
-    for _, gearName in ipairs(gearToBuy) do
-        local stockCount = GearStock[gearName] or 0
-        if stockCount > 0 then
+        -- Loop through gear list
+        for _, gearName in ipairs(gearToBuy) do
+            -- Stop IMMEDIATELY if toggle is off
+            if not AutoBuyGear then return end
+
+            local stockCount = GearStock[gearName] or 0
+
+            -- Buy gear 1-by-1
             for i = 1, stockCount do
+                if not AutoBuyGear then return end
+
                 BuyGear(gearName)
                 task.wait(0.1)
             end
         end
-    end
+    end)
 end
+
 
 
 --pet egg stock functions -- Get pet/egg stock functions
@@ -444,23 +461,31 @@ end
 
 -- Function to buy all selected eggs
 local function BuyAllSelectedEggs()
-    local eggsToBuy = {}
+    task.spawn(function()
+        -- Stop immediately if toggle is off
+        if not AutoBuyEggs then return end
 
-    -- If "All Eggs" is selected, get the full egg list
-    if table.find(SelectedEggs, "All Eggs") then
-        eggsToBuy = GetEggs()
-    else
-        eggsToBuy = SelectedEggs
-    end
+        local eggsToBuy = {}
 
-    -- Loop through each egg and buy it
-    for _, eggName in ipairs(eggsToBuy) do
-        if eggName ~= "All Eggs" then
-            BuyEgg(eggName)
-            task.wait(0.2) -- slight delay to avoid spamming the server
+        -- If "All Eggs" is selected, get full list
+        if table.find(SelectedEggs, "All Eggs") then
+            eggsToBuy = GetEggs()
+        else
+            eggsToBuy = SelectedEggs
         end
-    end
+
+        -- Loop through eggs and buy
+        for _, eggName in ipairs(eggsToBuy) do
+            -- Stop instantly when toggle is turned off
+            if not AutoBuyEggs then return end
+            if eggName == "All Eggs" then continue end
+
+            BuyEgg(eggName)
+            task.wait(0.2)
+        end
+    end)
 end
+
 
 --// Get Travel Merchant Stock Function
 local function GetTravelMerchantItems(IgnoreNoStock: boolean?): table
@@ -528,128 +553,51 @@ end
 
 --// Buy all selected items
 local function BuyAllSelectedTravelMerchantItems()
-    if type(TravelMerchantStock) ~= "table" or not next(TravelMerchantStock) then
-        --warn("[AutoBuyTravelMerchant] No stock data found — skipping.")
-        return
-    end
+    task.spawn(function()
+        -- Stop immediately if toggle is off
+        if not AutoBuyTravelMerchant then return end
 
-    local itemsToBuy = {}
+        -- Validate stock
+        if type(TravelMerchantStock) ~= "table" or not next(TravelMerchantStock) then
+            return
+        end
 
-    -- If "All Travel Items" selected, buy everything in stock
-    if table.find(SelectedTravelMerchantItems, "All Travel Items") then
-        for itemName, stockCount in pairs(TravelMerchantStock) do
-            if stockCount and stockCount > 0 then
-                table.insert(itemsToBuy, itemName)
+        local itemsToBuy = {}
+
+        -- If "All Travel Items" selected
+        if table.find(SelectedTravelMerchantItems, "All Travel Items") then
+            for itemName, stockCount in pairs(TravelMerchantStock) do
+                if stockCount and stockCount > 0 then
+                    table.insert(itemsToBuy, itemName)
+                end
+            end
+
+        else
+            -- Buy only selected items that have stock
+            for _, itemName in ipairs(SelectedTravelMerchantItems) do
+                local stockCount = TravelMerchantStock[itemName] or 0
+                if stockCount > 0 then
+                    table.insert(itemsToBuy, itemName)
+                end
             end
         end
-    else
-        -- Otherwise, only buy selected items that have stock
-        for _, itemName in ipairs(SelectedTravelMerchantItems) do
-            local stockCount = TravelMerchantStock[itemName] or 0
-            if stockCount > 0 then
-                table.insert(itemsToBuy, itemName)
-            else
-                --warn(string.format("[AutoBuyTravelMerchant] '%s' out of stock, skipping.", itemName))
+
+        -- Loop through buy list
+        for _, itemName in ipairs(itemsToBuy) do
+            -- Stop instantly if toggle is off
+            if not AutoBuyTravelMerchant then return end
+
+            local success, err = pcall(function()
+                BuyTravelMerchantItem(itemName)
+            end)
+
+            if not success then
+                warn(string.format("[AutoBuyTravelMerchant] Failed to buy '%s': %s", itemName, err))
             end
+
+            task.wait(0.15)
         end
-    end
-
-    -- Loop through and buy each item safely
-    for _, itemName in ipairs(itemsToBuy) do
-        local success, err = pcall(function()
-            BuyTravelMerchantItem(itemName)
-        end)
-
-        if not success then
-            warn(string.format("[AutoBuyTravelMerchant] Failed to buy '%s': %s", itemName, err))
-        end
-
-        task.wait(0.15)
-    end
-end
-
---Get event stock functions
-local function GetEventItems()
-    local ReplicatedStorage = game:GetService("ReplicatedStorage")
-    local items = {}
-
-    -- Find the Data → SafariEvent → SafariEventRewardData ModuleScript
-    local dataFolder = ReplicatedStorage:FindFirstChild("Data")
-    if not dataFolder then
-        warn("Data folder not found in ReplicatedStorage!")
-        return { "All Event Items" }
-    end
-
-    local safariEvent = dataFolder:FindFirstChild("SafariEvent")
-    if not safariEvent then
-        warn("SafariEvent folder not found in Data!")
-        return { "All Event Items" }
-    end
-
-    local rewardModule = safariEvent:FindFirstChild("SafariEventRewardData")
-    if not rewardModule or not rewardModule:IsA("ModuleScript") then
-        warn("SafariEventRewardData module not found!")
-        return { "All Event Items" }
-    end
-
-    -- Require the module safely
-    local success, rewardData = pcall(require, rewardModule)
-    if not success then
-        warn("Failed to require SafariEventRewardData:", rewardData)
-        return { "All Event Items" }
-    end
-
-    -- Access MilestoneUnlockData.EventShopUnlocks
-    local eventShopUnlocks = rewardData.MilestoneUnlockData and rewardData.MilestoneUnlockData.EventShopUnlocks
-    if not eventShopUnlocks or type(eventShopUnlocks) ~= "table" then
-        warn("EventShopUnlocks not found in MilestoneUnlockData!")
-        return { "All Event Items" }
-    end
-
-    -- Collect item names only (ignore integers)
-    for itemName, _ in pairs(eventShopUnlocks) do
-        table.insert(items, itemName)
-    end
-
-    -- Sort alphabetically
-    table.sort(items)
-
-    -- Add "All Event Items" at the top
-    table.insert(items, 1, "All Event Items")
-
-    return items
-end
-
-
---Buy event items functions 
--- Function to buy a single event shop item
-local function BuyEventItem(ItemName, ShopName)
-    if not ItemName or ItemName == "" then return end
-    -- Fire the remote to purchase the item
-    game:GetService("ReplicatedStorage").GameEvents.BuyEventShopStock:FireServer(ItemName, ShopName)
-end
-
--- Function to buy all selected event shop items
-local function BuyAllSelectedEventItems()
-    local itemsToBuy = {}
-
-    if table.find(SelectedEventItems, "All Event Items") then
-        itemsToBuy = GetEventItems()
-    else
-        for _, itemName in ipairs(SelectedEventItems) do
-            local stockCount = EventStock[itemName] or 1 -- fallback
-            if stockCount > 0 then
-                table.insert(itemsToBuy, itemName)
-            end
-        end
-    end
-
-    for _, itemName in ipairs(itemsToBuy) do
-        if itemName ~= "All Event Items" then
-            BuyEventItem(itemName, "Safari Shop")
-            task.wait(0.2)
-        end
-    end
+    end)
 end
 
 --submit event functions 
@@ -830,33 +778,25 @@ local function SubmitAllFruitEvent()
     print("Submitted fruit:", fruitTool.Name)
 end
 
-
-
-
 -- Auto-submit loop
 local function AutoSubmitGearEventLoop()
-    task.spawn(function()
-        while AutoSubmitGearEvent do
-            SubmitAllGearEvent()
-            task.wait(3) -- wait 3 seconds between submissions to avoid spam
-        end
-    end)
+    while AutoSubmitGearEvent do
+        SubmitAllGearEvent()
+        task.wait(3) -- wait 3 seconds between submissions to avoid spam
+    end
 end
 local function AutoSubmitEggEventLoop()
-    task.spawn(function()
-        while AutoSubmitEggEvent do
-            SubmitAllEggEvent()
-            task.wait(3) -- wait 3 seconds between submissions to avoid spam
-        end
-    end)
+    while AutoSubmitEggEvent do
+        SubmitAllEggEvent()
+        task.wait(3) -- wait 3 seconds between submissions to avoid spam
+    end
 end
-local function AutoSubmitFruitEventLoop()
-    task.spawn(function()
-        while AutoSubmitFruitEvent do
-            SubmitAllFruitEvent()
-            task.wait(3)
-        end
-    end)
+function AutoSubmitFruitEventLoop()
+    while AutoSubmitFruitEvent do
+        -- your logic here
+        SubmitAllFruitEvent()
+        task.wait(0.3) -- prevents spam
+    end
 end
 
 ------------------------------------------------Auto Craft seed event function
@@ -1082,18 +1022,34 @@ end
 
 -- AUTO-HARVEST LOOP
 function AutoHarvestLoop()
-    while AutoHarvest do
-        local plants = GetHarvestablePlants(true)
-
-        for _, plant in ipairs(plants) do
-            if IsFruitWanted(plant) then
-                HarvestPlant(plant)
-                task.wait(0.15)
-            end
-        end
-
-        task.wait(0.3)
+    -- Cancel any existing loop
+    if AutoHarvestThread then
+        task.cancel(AutoHarvestThread)
+        AutoHarvestThread = nil
     end
+
+    AutoHarvestThread = task.spawn(function()
+        while AutoHarvest do
+            local plants = GetHarvestablePlants(true)
+
+            for _, plant in ipairs(plants) do
+                if not AutoHarvest then return end  -- stop instantly
+                if IsFruitWanted(plant) then
+                    local ok, err = pcall(function()
+                        HarvestPlant(plant)
+                    end)
+
+                    if not ok then
+                        warn("AutoHarvest error:", err)
+                    end
+
+                    task.wait(0.15)
+                end
+            end
+
+            task.wait(0.3)
+        end
+    end)
 end
 
 
@@ -1271,8 +1227,8 @@ local AutoSubmitGearEventToggle = EventTab:CreateToggle({
     Flag = "AutoSubmitGearEventToggle",
     Callback = function(Value)
         AutoSubmitGearEvent = Value
-        if AutoSubmitGearEvent then
-            AutoSubmitGearEventLoop()
+ 		if Value then
+            task.spawn(AutoSubmitGearEventLoop)
         end
     end
 })
@@ -1294,12 +1250,11 @@ local AutoSubmitEggEventToggle = EventTab:CreateToggle({
     Flag = "AutoSubmitEggEventToggle",
     Callback = function(Value)
         AutoSubmitEggEvent = Value
-        if AutoSubmitEggEvent then
-            AutoSubmitEggEventLoop()
+        if Value then
+            task.spawn(AutoSubmitEggEventLoop)
         end
     end
 })
-
 --Auto submit fruit to the event drop down menu
 local AutoSubmitFruitEventDropdown = EventTab:CreateDropdown({
     Name = "Select Fruit",
@@ -1319,10 +1274,11 @@ local AutoSubmitFruitEventToggle = EventTab:CreateToggle({
     Callback = function(Value)
         AutoSubmitFruitEvent = Value
         if Value then
-            AutoSubmitFruitEventLoop()
+            task.spawn(AutoSubmitFruitEventLoop)
         end
     end
 })
+
 
 --------------------------------------------------------------------Smithing Event Crafting Section-------------------------------------------------------------------------------------------------
 
@@ -1458,15 +1414,14 @@ local HarvestToggle = GardenTab:CreateToggle({
     Name = "Auto Harvest",
     CurrentValue = false,
     Flag = "AutoHarvestToggle",
-
-    Callback = function(Value)
-        AutoHarvest = Value
-
-        if AutoHarvest then
-            task.spawn(AutoHarvestLoop)
+    Callback = function(value)
+        AutoHarvest = value
+        if value then
+            AutoHarvestLoop()
         end
     end
 })
+
 
 -- Load config new
 Rayfield:LoadConfiguration()
