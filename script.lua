@@ -1,5 +1,5 @@
 --version
---2.41
+--2.42
 
 local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 
@@ -27,18 +27,22 @@ local Farms = workspace.Farm
 --global variables
 -- seed variables 
 local AutoBuySeeds = false
+local AutoBuySeedsThread = nil
 local SelectedSeeds = {}
 local SeedStock = {}
 --Gear variables
 local AutoBuyGear = false
+local AutoBuyGearThread = nil
 local SelectedGear = {}
 local GearStock = {}
 --Egg variables
 local AutoBuyEggs = false
+local AutoBuyEggsThread = false
 local SelectedEggs = {}
 local EggStock = {}
 --Travel merchant variables
 local AutoBuyTravelMerchant = false
+local AutoBuyTravelMerchantThread = false
 local SelectedTravelMerchantItems = {}
 local TravelMerchantStock = {}
 --Event variables
@@ -303,35 +307,37 @@ end
 local function BuySeed(Seed: string)
 	GameEvents.BuySeedStock:FireServer("Shop", Seed)
 end
-local function BuyAllSelectedSeeds()
-    task.spawn(function()
-        local seedsToBuy = {}
 
-        -- If "All Seeds" was chosen, get full stock list
-        if table.find(SelectedSeeds, "All Seeds") then
-            seedsToBuy = GetSeedStock(true)
-        else
-            for _, seedName in ipairs(SelectedSeeds) do
-                local stockCount = SeedStock[seedName] or 0
-                if stockCount > 0 then
-                    table.insert(seedsToBuy, seedName)
+-- Buy all seeds with proper thread control
+local function BuyAllSelectedSeeds()
+    if AutoBuySeedsThread then task.cancel(AutoBuySeedsThread) end
+
+    AutoBuySeedsThread = task.spawn(function()
+        while AutoBuySeeds do
+            local seedsToBuy = {}
+
+            if table.find(SelectedSeeds, "All Seeds") then
+                seedsToBuy = GetSeedStock(true)
+            else
+                for _, seedName in ipairs(SelectedSeeds) do
+                    local stockCount = SeedStock[seedName] or 0
+                    if stockCount > 0 then
+                        table.insert(seedsToBuy, seedName)
+                    end
                 end
             end
-        end
 
-        -- Buy loop
-        for _, seedName in ipairs(seedsToBuy) do
-            -- Stop immediately if toggle off
-            if not AutoBuySeeds then return end
-
-            local stockCount = SeedStock[seedName] or 0
-
-            for i = 1, stockCount do
+            for _, seedName in ipairs(seedsToBuy) do
                 if not AutoBuySeeds then return end
-
-                BuySeed(seedName)
-                task.wait(0.1)
+                local stockCount = SeedStock[seedName] or 0
+                for i = 1, stockCount do
+                    if not AutoBuySeeds then return end
+                    BuySeed(seedName)
+                    task.wait(0.1)
+                end
             end
+
+            task.wait(3)
         end
     end)
 end
@@ -381,38 +387,37 @@ local function BuyGear(GearName)
     if not GearName or GearName == "" then return end
     GameEvents.BuyGearStock:FireServer(GearName)
 end
---Buy all selected gear function
-local function BuyAllSelectedGear()
-    task.spawn(function()
-        local gearToBuy = {}
 
-        -- If "All Gear" was selected, get everything with stock > 0
-        if table.find(SelectedGear, "All Gear") then
-            gearToBuy = GetGearStock(true)
-        else
-            -- Only buy selected gear with stock
-            for _, gearName in ipairs(SelectedGear) do
-                local stockCount = GearStock[gearName] or 0
-                if stockCount > 0 then
-                    table.insert(gearToBuy, gearName)
+-- Buy all gear with proper thread control
+local function BuyAllSelectedGear()
+    if AutoBuyGearThread then task.cancel(AutoBuyGearThread) end
+
+    AutoBuyGearThread = task.spawn(function()
+        while AutoBuyGear do
+            local gearToBuy = {}
+
+            if table.find(SelectedGear, "All Gear") then
+                gearToBuy = GetGearStock(true)
+            else
+                for _, gearName in ipairs(SelectedGear) do
+                    local stockCount = GearStock[gearName] or 0
+                    if stockCount > 0 then
+                        table.insert(gearToBuy, gearName)
+                    end
                 end
             end
-        end
 
-        -- Loop through gear list
-        for _, gearName in ipairs(gearToBuy) do
-            -- Stop IMMEDIATELY if toggle is off
-            if not AutoBuyGear then return end
-
-            local stockCount = GearStock[gearName] or 0
-
-            -- Buy gear 1-by-1
-            for i = 1, stockCount do
+            for _, gearName in ipairs(gearToBuy) do
                 if not AutoBuyGear then return end
-
-                BuyGear(gearName)
-                task.wait(0.1)
+                local stockCount = GearStock[gearName] or 0
+                for i = 1, stockCount do
+                    if not AutoBuyGear then return end
+                    BuyGear(gearName)
+                    task.wait(0.1)
+                end
             end
+
+            task.wait(3)
         end
     end)
 end
@@ -455,33 +460,31 @@ end
 -- Buy egg function
 local function BuyEgg(EggName)
     if not EggName or EggName == "" then return end
-    -- Fire the remote to purchase the egg
     game:GetService("ReplicatedStorage").GameEvents.BuyPetEgg:FireServer(EggName)
 end
 
--- Function to buy all selected eggs
+-- Buy all eggs with proper thread control
 local function BuyAllSelectedEggs()
-    task.spawn(function()
-        -- Stop immediately if toggle is off
-        if not AutoBuyEggs then return end
+    if AutoBuyEggsThread then task.cancel(AutoBuyEggsThread) end
 
-        local eggsToBuy = {}
+    AutoBuyEggsThread = task.spawn(function()
+        while AutoBuyEggs do
+            local eggsToBuy = {}
 
-        -- If "All Eggs" is selected, get full list
-        if table.find(SelectedEggs, "All Eggs") then
-            eggsToBuy = GetEggs()
-        else
-            eggsToBuy = SelectedEggs
-        end
+            if table.find(SelectedEggs, "All Eggs") then
+                eggsToBuy = GetEggs()
+            else
+                eggsToBuy = SelectedEggs
+            end
 
-        -- Loop through eggs and buy
-        for _, eggName in ipairs(eggsToBuy) do
-            -- Stop instantly when toggle is turned off
-            if not AutoBuyEggs then return end
-            if eggName == "All Eggs" then continue end
+            for _, eggName in ipairs(eggsToBuy) do
+                if not AutoBuyEggs then return end
+                if eggName == "All Eggs" then continue end
+                BuyEgg(eggName)
+                task.wait(0.2)
+            end
 
-            BuyEgg(eggName)
-            task.wait(0.2)
+            task.wait(3)
         end
     end)
 end
@@ -546,56 +549,47 @@ local function GetTravelMerchantItems(IgnoreNoStock: boolean?): table
 end
 
 --// Buy single item
+-- Buy Travel Merchant Item
 local function BuyTravelMerchantItem(ItemName)
     if not ItemName or ItemName == "" then return end
     game:GetService("ReplicatedStorage").GameEvents.BuyTravelingMerchantShopStock:FireServer(ItemName)
 end
 
---// Buy all selected items
+-- Buy all travel merchant items with proper thread control
 local function BuyAllSelectedTravelMerchantItems()
-    task.spawn(function()
-        -- Stop immediately if toggle is off
-        if not AutoBuyTravelMerchant then return end
+    if AutoBuyTravelMerchantThread then task.cancel(AutoBuyTravelMerchantThread) end
 
-        -- Validate stock
-        if type(TravelMerchantStock) ~= "table" or not next(TravelMerchantStock) then
-            return
-        end
+    AutoBuyTravelMerchantThread = task.spawn(function()
+        while AutoBuyTravelMerchant do
+            local itemsToBuy = {}
 
-        local itemsToBuy = {}
-
-        -- If "All Travel Items" selected
-        if table.find(SelectedTravelMerchantItems, "All Travel Items") then
-            for itemName, stockCount in pairs(TravelMerchantStock) do
-                if stockCount and stockCount > 0 then
-                    table.insert(itemsToBuy, itemName)
+            if table.find(SelectedTravelMerchantItems, "All Travel Items") then
+                for itemName, stockCount in pairs(TravelMerchantStock) do
+                    if stockCount and stockCount > 0 then
+                        table.insert(itemsToBuy, itemName)
+                    end
+                end
+            else
+                for _, itemName in ipairs(SelectedTravelMerchantItems) do
+                    local stockCount = TravelMerchantStock[itemName] or 0
+                    if stockCount > 0 then
+                        table.insert(itemsToBuy, itemName)
+                    end
                 end
             end
 
-        else
-            -- Buy only selected items that have stock
-            for _, itemName in ipairs(SelectedTravelMerchantItems) do
-                local stockCount = TravelMerchantStock[itemName] or 0
-                if stockCount > 0 then
-                    table.insert(itemsToBuy, itemName)
+            for _, itemName in ipairs(itemsToBuy) do
+                if not AutoBuyTravelMerchant then return end
+                local success, err = pcall(function()
+                    BuyTravelMerchantItem(itemName)
+                end)
+                if not success then
+                    warn(string.format("[AutoBuyTravelMerchant] Failed to buy '%s': %s", itemName, err))
                 end
-            end
-        end
-
-        -- Loop through buy list
-        for _, itemName in ipairs(itemsToBuy) do
-            -- Stop instantly if toggle is off
-            if not AutoBuyTravelMerchant then return end
-
-            local success, err = pcall(function()
-                BuyTravelMerchantItem(itemName)
-            end)
-
-            if not success then
-                warn(string.format("[AutoBuyTravelMerchant] Failed to buy '%s': %s", itemName, err))
+                task.wait(0.15)
             end
 
-            task.wait(0.15)
+            task.wait(3)
         end
     end)
 end
@@ -1074,23 +1068,23 @@ local AutoBuyTab = Window:CreateTab("Auto Buy", 4483362458) -- Title, Image
 local AutoBuySeedSection = AutoBuyTab:CreateSection("Seeds")
 --Auto Buy Seed Toggle
 local AutoBuySeedToggle = AutoBuyTab:CreateToggle({
-	Name = "Auto Buy Seeds",
-	CurrentValue = false,
-	Flag = "AutoBuySeedToggle", -- A flag is the identifier for the configuration file, make sure every element has a different flag if you're using configuration saving to ensure no overlaps
-	Callback = function(Value)
-    AutoBuySeeds = Value
-		if AutoBuySeeds then
-			task.spawn(function()
-				while AutoBuySeeds do
-					BuyAllSelectedSeeds()
-					task.wait(3) -- wait a few seconds between buys to avoid spam
-				end
-			end)
-		else
-			--print("Auto Buy stopped")
-		end
-	end
+    Name = "Auto Buy Seeds",
+    CurrentValue = false,
+    Flag = "AutoBuySeedToggle",
+    Callback = function(value)
+        AutoBuySeeds = value
+        if value then
+            BuyAllSelectedSeeds()
+        else
+            -- stops the loop immediately
+            if AutoBuySeedsThread then
+                task.cancel(AutoBuySeedsThread)
+                AutoBuySeedsThread = nil
+            end
+        end
+    end
 })
+
 --Auto Buy Seed Dropdown
 local AutoBuySeedDropdown = AutoBuyTab:CreateDropdown({
 	Name = "Select Seeds",
@@ -1109,20 +1103,20 @@ end,
 
 --Auto Buy Gear Section
 local AutoBuyGearSection = AutoBuyTab:CreateSection("Gear")
-
 local AutoBuyGearToggle = AutoBuyTab:CreateToggle({
     Name = "Auto Buy Gear",
     CurrentValue = false,
     Flag = "AutoBuyGearToggle",
     Callback = function(Value)
-        AutoBuyGear = Value
-        if AutoBuyGear then
-            task.spawn(function()
-                while AutoBuyGear do
-                    BuyAllSelectedGear()
-                    task.wait(3)
-                end
-            end)
+        AutoBuyGear = value
+        if value then
+            BuyAllSelectedGear()
+        else
+            -- stops the loop immediately
+            if AutoBuyGearThread then
+                task.cancel(AutoBuyGearThread)
+                AutoBuyGearThread = nil
+            end
         end
     end
 })
@@ -1146,24 +1140,23 @@ local GearDropdown = AutoBuyTab:CreateDropdown({
 --Auto Buy Egg Section
 local AutoBuyEggSection = AutoBuyTab:CreateSection("Eggs")
 --Auto Buy Egg Toggle
---Auto Buy Egg Toggle
-local AutoBuyEggToggle = AutoBuyTab:CreateToggle({
-	Name = "Auto Buy Eggs",
-	CurrentValue = false,
-	Flag = "AutoBuyEggToggle",
-	Callback = function(Value)
-		AutoBuyEggs = Value
-		if AutoBuyEggs then
-			task.spawn(function()
-				while AutoBuyEggs do
-					BuyAllSelectedEggs()
-					task.wait(3)
-				end
-			end)
-		end
-	end
+local AutoBuyEggsToggle = AutoBuyTab:CreateToggle({
+    Name = "Auto Buy Eggs",
+    CurrentValue = false,
+    Flag = "AutoBuyEggToggle",
+    Callback = function(Value)
+        AutoBuyEggs = value
+        if value then
+            BuyAllSelectedEggs()
+        else
+            -- stops the loop immediately
+            if AutoBuyEggsThread then
+                task.cancel(AutoBuyEggsThread)
+                AutoBuyEggsThread = nil
+            end
+        end
+    end
 })
-
 --Auto Buy Egg Dropdown
 local AutoBuyEggDropdown = AutoBuyTab:CreateDropdown({
 	Name = "Select Eggs",
