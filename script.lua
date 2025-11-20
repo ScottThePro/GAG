@@ -1,5 +1,5 @@
 --version
---2.43
+--2.44
 
 local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 
@@ -1075,7 +1075,7 @@ local AutoBuySeedToggle = AutoBuyTab:CreateToggle({
 local AutoBuySeedDropdown = AutoBuyTab:CreateDropdown({
 	Name = "Select Seeds",
 	Options = GetSeedStock(false),
-	CurrentOption = {"All Seeds"}, -- start empty for multi-select
+	CurrentOption = {}, -- start empty for multi-select
 	MultipleOptions = true,
 	Flag = "AutoBuySeedDropdown",
 	Callback = function(Options)
@@ -1110,7 +1110,7 @@ local AutoBuyGearToggle = AutoBuyTab:CreateToggle({
 local GearDropdown = AutoBuyTab:CreateDropdown({
 	Name = "Select Gear",
 	Options = GetGearStock(false),
-	CurrentOption = {"All Gear"},
+	CurrentOption = {},
 	MultipleOptions = true, -- only if your Rayfield supports it
 	Flag = "GearStockDropdown",
 	Callback = function(Options)
@@ -1119,7 +1119,7 @@ local GearDropdown = AutoBuyTab:CreateDropdown({
 		else
 			SelectedGear = {Options}
 		end
-		--print("Selected Gear:", table.concat(SelectedGear, ", "))
+		print("Selected Gear:", table.concat(SelectedGear, ", "))
 	end,
 })
 
@@ -1156,6 +1156,7 @@ local AutoBuyEggDropdown = AutoBuyTab:CreateDropdown({
     else
         SelectedEggs = {Options}
     end
+		print("Selected Eggs:", table.concat(SelectedEggs, ", "))
 end,
 })
 
