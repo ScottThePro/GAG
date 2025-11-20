@@ -1,5 +1,5 @@
 --version
---2.51
+--2.52
 
 local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 
@@ -221,44 +221,26 @@ end
 
 --Get all gear names from GearData modulescript which is how the game does it
 local function GetAllGearNames()
+    local data = ReplicatedStorage:FindFirstChild("Data")
+    if not data then
+        warn("ReplicatedStorage.Data not found!")
+        return {}
+    end
+
+    local gearModule = data:FindFirstChild("GearData")
+    if not gearModule or not gearModule:IsA("ModuleScript") then
+        warn("Data.GearData not found or is not a ModuleScript!")
+        return {}
+    end
+
+    local gearData = require(gearModule)
     local gearNames = {}
 
-    -- Navigate safely to ReplicatedStorage.Data.GearData
-    local dataFolder = ReplicatedStorage:FindFirstChild("Data")
-    if not dataFolder then
-        warn("Data folder not found!")
-        return gearNames
+    for gearName, _ in pairs(gearData) do
+        table.insert(gearNames, gearName)
     end
 
-    local gearDataFolder = dataFolder:FindFirstChild("GearData")
-    if not gearDataFolder then
-        warn("GearData folder not found!")
-        return gearNames
-    end
-
-    -- Recursive search for ModuleScripts
-    local function scan(folder)
-        for _, child in ipairs(folder:GetChildren()) do
-            
-            if child:IsA("ModuleScript") then
-                local success, moduleData = pcall(require, child)
-                if success and typeof(moduleData) == "table" then
-                    for key, _ in pairs(moduleData) do
-                        table.insert(gearNames, tostring(key))
-                    end
-                end
-
-            elseif child:IsA("Folder") then
-                scan(child)
-            end
-        end
-    end
-
-    -- Begin scanning
-    scan(gearDataFolder)
-
-    -- Sort alphabetically
-    table.sort(gearNames)
+	table.sort(gearNames)
 
     return gearNames
 end
@@ -437,7 +419,7 @@ end
 
 --pet egg stock functions -- Get pet/egg stock functions
 local function GetEggs(): table
-    local petShop = PlayerGui:FindFirstChild("PetShop_UI")
+    local petShop = PlayerGui:FindFirstChild("PetShop_UI") -- updated name
     if not petShop then return {} end
 
     local mainFrame = petShop:FindFirstChild("Frame")
@@ -460,12 +442,13 @@ local function GetEggs(): table
         end
     end
 
-    -- Add "All Eggs" option for dropdowns
-    table.insert(eggs, "All Eggs")
+    -- Sort eggs alphabetically
+    table.sort(eggs)
 
+    -- Add "All Eggs" to the top of the list
+    table.insert(eggs, 1, "All Eggs")
     return eggs
 end
-
 
 -- Buy egg function
 local function BuyEgg(EggName)
@@ -482,13 +465,14 @@ local function BuyAllSelectedEggs()
             local eggsToBuy = {}
 
             if table.find(SelectedEggs, "All Eggs") then
-                eggsToBuy = GetEggs() -- just return all egg names
+                eggsToBuy = GetEggs()
             else
                 eggsToBuy = SelectedEggs
             end
 
             for _, eggName in ipairs(eggsToBuy) do
                 if not AutoBuyEggs then return end
+                if eggName == "All Eggs" then continue end
                 BuyEgg(eggName)
                 task.wait(0.2)
             end
@@ -498,17 +482,6 @@ local function BuyAllSelectedEggs()
     end)
 end
 
-local function GetEggsDropdownOptions()
-    local eggs = GetEggs() -- returns dictionary {eggName = stock}
-    local eggNames = {}
-
-    for name, stock in pairs(eggs) do
-        table.insert(eggNames, name)
-    end
-
-    table.sort(eggNames) -- optional: sort alphabetically
-    return eggNames
-end
 
 --// Get Travel Merchant Stock Function
 local function GetTravelMerchantItems(IgnoreNoStock: boolean?): table
@@ -1166,7 +1139,7 @@ local AutoBuyEggsToggle = AutoBuyTab:CreateToggle({
 --Auto Buy Egg Dropdown
 local AutoBuyEggDropdown = AutoBuyTab:CreateDropdown({
 	Name = "Select Eggs",
-	Options = GetEggsDropdownOptions(),
+	Options = GetEggs(),
 	CurrentOption = {}, -- start empty for multi-select
 	MultipleOptions = true,
 	Flag = "AutoBuyEggDropdown",
@@ -1248,7 +1221,7 @@ local AutoSubmitGearEventToggle = EventTab:CreateToggle({
 --Auto submit pet to the event dropdown menu
 local AutoSubmitPetEventDropdown = EventTab:CreateDropdown({
     Name = "Select Egg",
-    Options = GetEggsDropdownOptions(),
+    Options = GetEggs(),
     CurrentOption = {},
     MultipleOptions = false,
     Flag = "AutoSubmitPetEventDropdown",
