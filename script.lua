@@ -1,5 +1,5 @@
 --version
---2.36
+--2.4
 
 local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 
@@ -1209,6 +1209,20 @@ local EventTab = Window:CreateTab("Event", 4483362458) -- Title, Image
 --AEvent section
 local EventSection = EventTab:CreateSection("Smithing Event Submitting")
 --Auto Buy Event toggle
+local function WaitForGearData()
+    local dataFolder = ReplicatedStorage:WaitForChild("Data")
+    local gearDataFolder = dataFolder:WaitForChild("GearData")
+
+    -- Wait until at least one ModuleScript is inside GearData
+    repeat
+        task.wait(0.1)
+    until #gearDataFolder:GetChildren() > 0
+
+    return gearDataFolder
+end
+
+-- Wait for modules to be ready
+WaitForGearData()
 --Auto submit gear to the event drop down menu
 local AutoSubmitGearEventDropdown = EventTab:CreateDropdown({
     Name = "Select Gear",
@@ -1235,7 +1249,7 @@ local AutoSubmitGearEventToggle = EventTab:CreateToggle({
 --Auto submit pet to the event dropdown menu
 local AutoSubmitPetEventDropdown = EventTab:CreateDropdown({
     Name = "Select Egg",
-    Options = GetAllGearNames(),
+    Options = GetEggs(),
     CurrentOption = {},
     MultipleOptions = false,
     Flag = "AutoSubmitPetEventDropdown",
