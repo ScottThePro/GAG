@@ -19,7 +19,7 @@ local PlayerGui = LocalPlayer.PlayerGui
 local ShecklesCount = Leaderstats.Sheckles
 local GameInfo = MarketplaceService:GetProductInfo(game.PlaceId)
 
---// Folders
+--// 
 local GameEvents = ReplicatedStorage.GameEvents
 local CraftingEvent = GameEvents.CraftingGlobalObjectService
 local Farms = workspace.Farm
@@ -53,6 +53,8 @@ local SelectedEventGearItems = {}
 local SelectedEventPetItems = {}
 local SelectedEventCosmeticItems = {}
 local SelectedFruitName = "Carrot"
+local SelectedGearName = "Watering Can"
+local SelectedPetName = "Common Egg"
 
 --Harvesting crop variables
 local AutoHarvest = false
@@ -1081,7 +1083,7 @@ end
 -- AUTO-HARVEST LOOP
 function AutoHarvestLoop()
     while AutoHarvest do
-        local plants = GetHarvestablePlants(false)
+        local plants = GetHarvestablePlants(true)
 
         for _, plant in ipairs(plants) do
             if IsFruitWanted(plant) then
@@ -1252,7 +1254,7 @@ local EventTab = Window:CreateTab("Event", 4483362458) -- Title, Image
 local EventSection = EventTab:CreateSection("Smithing Event Submitting")
 --Auto Buy Event toggle
 --Auto submit gear to the event drop down menu
-local AutoSubmitFruitEventDropdown = EventTab:CreateDropdown({
+local AutoSubmitGearEventDropdown = EventTab:CreateDropdown({
     Name = "Select Gear",
     Options = GetAllGearNames(),
     CurrentOption = {},
@@ -1273,6 +1275,17 @@ local AutoSubmitGearEventToggle = EventTab:CreateToggle({
             AutoSubmitGearEventLoop()
         end
     end
+})
+--Auto submit pet to the event dropdown menu
+local AutoSubmitPetEventDropdown = EventTab:CreateDropdown({
+    Name = "Select Egg",
+    Options = GetAllGearNames(),
+    CurrentOption = {},
+    MultipleOptions = false,
+    Flag = "AutoSubmitPetEventDropdown",
+    Callback = function(Option)
+        SelectedPetName = Option[1]   -- store selected gear name
+    end,
 })
 --Auto submit egg to the event toggle
 local AutoSubmitEggEventToggle = EventTab:CreateToggle({
