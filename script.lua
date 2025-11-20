@@ -1,5 +1,5 @@
 --version
---2.52
+--2.53
 
 local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 
@@ -77,7 +77,7 @@ local Window = Rayfield:CreateWindow({
 
    DisableRayfieldPrompts = true,
    DisableBuildWarnings = false, -- Prevents Rayfield from warning when the script has a version mismatch with the interface
-
+	WindowTransparency = 0.5,
    ConfigurationSaving = {
       Enabled = true,
       FolderName = nil, -- Create a custom folder for your hub/game
