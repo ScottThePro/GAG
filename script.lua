@@ -1347,7 +1347,7 @@ end,
 --------------------------------------------------------------------Smithing Event Section-------------------------------------------------------------------------------------------------
 local EventTab = Window:CreateTab("Event", 4483362458) -- Title, Image
 --Trader event section 11-23-25
-local TraderEventSection = EventTab:CreateSection("Trader Event Submitting")
+local TraderEventSection = EventTab:CreateSection("Trader Event")
 --Auto submit gear to the event toggle
 local AutoSubmitTraderEventToggle = EventTab:CreateToggle({
     Name = "Auto Submit All",
@@ -1370,7 +1370,7 @@ local AutoSubmitTraderEventToggle = EventTab:CreateToggle({
 })
 
 --AEvent section
-local EventSection = EventTab:CreateSection("Smithing Event Submitting")
+local EventSection = EventTab:CreateSection("Smithing Event")
 --Auto Buy Event toggle
 --Auto submit gear to the event drop down menu
 local AutoSubmitGearEventDropdown = EventTab:CreateDropdown({
