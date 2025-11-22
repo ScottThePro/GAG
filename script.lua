@@ -1,5 +1,5 @@
 --version
---2.60
+--2.61
 
 local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 
@@ -1299,7 +1299,8 @@ end,
 
 --Auto Buy Garden Shop
 local AutoBuyGardenShopSection = AutoBuyTab:CreateSection("Ascention Store")
-local AutoBuyGardenCoin = Tab:CreateButton({
+
+local AutoBuyGardenCoin = AutoBuyTab:CreateButton({
    Name = "Ascend",
    Callback = function()
    -- The function that takes place when the button is pressed
