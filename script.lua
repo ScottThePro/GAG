@@ -1,6 +1,5 @@
 --version
---2.62
-
+--2.63
 local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 
 --// Services
@@ -993,7 +992,7 @@ local function GetTraderSubmitRemote()
     return trader:FindFirstChild("Trader_SubmitFruitRE")
 end
 
-local function AutoSubmitFruitLoop()
+local function AutoSubmitTraderEventLoop()
     -- Cancel old thread if still running
     if AutoSubmitTraderEventThread then
         task.cancel(AutoSubmitTraderEventThread)
