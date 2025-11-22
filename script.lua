@@ -1,5 +1,5 @@
 --version
---2.61
+--2.62
 
 local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 
@@ -257,6 +257,7 @@ end
 
 -- Get all gardenshop names
 local function GetGardenShopItems()
+	local DataFolder = ReplicatedStorage:FindFirstChild("Data")
     local module = DataFolder:FindFirstChild("GardenCoinShopData")
     if not module then
         warn("GardenCoinShopData not found")
