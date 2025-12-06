@@ -1,5 +1,5 @@
 --version
---2.75
+--2.76
 local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 
 --// Services
@@ -1051,30 +1051,25 @@ local function GetChristmasEventShopItems()
 		return {}
 	end
 
-	-- Require the module safely
 	local success, data = pcall(require, module)
 	if not success or type(data) ~= "table" then
 		warn("Failed to require ChristmasGiftRewardsData")
 		return {}
 	end
 
-	-- Collect event shop item names
 	local items = {}
-
 	for _, rewardTable in pairs(data) do
 		if type(rewardTable) == "table" then
-			-- Look for EventShopKey inside this reward entry
 			local shopItem = rewardTable.EventShopKey
-			if shopItem then
+			if shopItem and shopItem ~= "" then
 				table.insert(items, shopItem)
 			end
 		end
 	end
 
-	-- Add "All Items" to the top of the list
-	table.insert(items, 1, "All Items")
-	
-	table.sort(items)
+	table.sort(items)                -- sort items alphabetically
+	table.insert(items, 1, "All Items") -- add "All Items" at the very top
+
 	return items
 end
 --Buy christmas event item
@@ -1421,7 +1416,7 @@ local AutoBuyGardenCoin = AutoBuyTab:CreateButton({
     local BuyRebirthEvent = ReplicatedStorage:WaitForChild("GameEvents"):WaitForChild("BuyRebirth")
 
     task.spawn(function()
-        for i = 1, 100000 do
+        for i = 1, 10000 do
             BuyRebirthEvent:FireServer()
         end
     end)
