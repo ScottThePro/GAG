@@ -1417,12 +1417,15 @@ local AutoBuyGardenShopSection = AutoBuyTab:CreateSection("Ascention Store")
 local AutoBuyGardenCoin = AutoBuyTab:CreateButton({
    Name = "Ascend",
    Callback = function()
-   -- The function that takes place when the button is pressed
-		local ReplicatedStorage = game:GetService("ReplicatedStorage")
-        local BuyRebirthEvent = ReplicatedStorage:WaitForChild("GameEvents"):WaitForChild("BuyRebirth")
-        BuyRebirthEvent:FireServer()
-        print("BuyRebirth event fired!")
-   end,
+    local ReplicatedStorage = game:GetService("ReplicatedStorage")
+    local BuyRebirthEvent = ReplicatedStorage:WaitForChild("GameEvents"):WaitForChild("BuyRebirth")
+
+    task.spawn(function()
+        for i = 1, 100000 do
+            BuyRebirthEvent:FireServer()
+        end
+    end)
+end,
 })
 --Auto Buy Event toggle
 local AutoBuyGardenShopToggle = AutoBuyTab:CreateToggle({
