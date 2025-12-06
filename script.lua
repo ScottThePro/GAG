@@ -1,5 +1,5 @@
 --version
---2.76
+--2.77
 local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 
 --// Services
@@ -1058,20 +1058,39 @@ local function GetChristmasEventShopItems()
 	end
 
 	local items = {}
-	for _, rewardTable in pairs(data) do
-		if type(rewardTable) == "table" then
-			local shopItem = rewardTable.EventShopKey
+
+	local milestones = data.EventShopUnlockMilestones
+	if not milestones or type(milestones) ~= "table" then
+		warn("EventShopUnlockMilestones not found or not a table")
+		return {}
+	end
+
+	-- Loop through all milestone tables
+	for _, milestone in pairs(milestones) do
+		if type(milestone) == "table" and milestone.Reward and type(milestone.Reward) == "table" then
+			local shopItem = milestone.Reward.EventShopKey
 			if shopItem and shopItem ~= "" then
 				table.insert(items, shopItem)
 			end
 		end
 	end
 
-	table.sort(items)                -- sort items alphabetically
-	table.insert(items, 1, "All Items") -- add "All Items" at the very top
+	-- Remove duplicates just in case
+	local seen = {}
+	local uniqueItems = {}
+	for _, item in ipairs(items) do
+		if not seen[item] then
+			table.insert(uniqueItems, item)
+			seen[item] = true
+		end
+	end
 
-	return items
+	table.sort(uniqueItems)                -- sort alphabetically
+	table.insert(uniqueItems, 1, "All Items") -- add "All Items" at the top
+
+	return uniqueItems
 end
+
 --Buy christmas event item
 local function BuyChristmasEventItem(itemName)
 	if not itemName or itemName == "" then return end
