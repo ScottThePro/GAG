@@ -1,5 +1,5 @@
 --version
---2.74
+--2.75
 local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 
 --// Services
@@ -1096,7 +1096,7 @@ local function BuyAllSelectedChristmasEventItems()
 			local itemsToBuy = {}
 
 			if table.find(SelectedChristmasItems, "All Items") then
-				itemsToBuy = GetEventShopItems()
+				itemsToBuy = GetChristmasEventShopItems()
 			else
 				itemsToBuy = SelectedChristmasItems
 			end
@@ -1484,7 +1484,7 @@ local AutoBuyChristmasToggle = EventTab:CreateToggle({
 --Christmas event shop drop down
 local AutoChristmasEventDropdown = EventTab:CreateDropdown({
 	Name = "Select Christmas Items",
-	Options = GetEventShopItems(),
+	Options = GetChristmasEventShopItems(),
 	CurrentOption = {},
 	MultipleOptions = true,
 	Flag = "AutoChristmasEventDropdown",
