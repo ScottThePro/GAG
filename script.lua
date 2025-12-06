@@ -1087,6 +1087,7 @@ local function GetChristmasEventShopItems()
 
 	table.sort(uniqueItems)                -- sort alphabetically
 	table.insert(uniqueItems, 1, "All Items") -- add "All Items" at the top
+	table.insert(uniqueItems, 2, "Christmas Firework")
 
 	return uniqueItems
 end
