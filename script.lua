@@ -1,5 +1,5 @@
 --version
---2.72
+--2.73
 local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 
 --// Services
@@ -1463,18 +1463,22 @@ local EventTab = Window:CreateTab("Event", 4483362458) -- Title, Image
 --Christmas event section 07-12-25
 local EventSection = EventTab:CreateSection("Christmas Event")
 --Auto submit fruit event
-local AutoSubmitChristmasToggle = EventTab:CreateToggle({
-	Name = "Auto Submit Christmas Fruit",
-	Flag = "AutoSubmitChristmasFruitToggle",
-	CurrentValue = false,
-	Callback = function(value)
-		AutoSubmitChristmasFruit = value
-		if AutoSubmitChristmasFruit then
+local AutoBuyChristmasToggle = EventTab:CreateToggle({
+    Name = "Auto Submit Christmas Fruit",
+    CurrentValue = false,
+    Flag = "AutoSubmitChristmasFruitToggle",
+    Callback = function(Value)
+        AutoSubmitChristmasFruit = Value
+        if Value then
 			AutoSubmitAllChristmasFruit()
-		elseif AutoSubmitChristmasFruitThread then
-			task.cancel(AutoSubmitChristmasFruitThread)
-		end
-	end,
+        else
+            -- stops the loop immediately
+            if AutoSubmitChristmasFruitThread then
+                task.cancel(AutoSubmitChristmasFruitThread)
+                AutoSubmitChristmasFruitThread = nil
+            end
+        end
+    end
 })
 --Auto Buy Event toggle
 --Christmas event shop drop down
