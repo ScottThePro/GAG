@@ -1,5 +1,5 @@
 --version
---2.73
+--2.74
 local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 
 --// Services
@@ -1355,7 +1355,7 @@ local AutoBuyEggsToggle = AutoBuyTab:CreateToggle({
                 AutoBuyEggsThread = nil
             end
         end
-    end
+    end,
 })
 --Auto Buy Egg Dropdown
 local AutoBuyEggDropdown = AutoBuyTab:CreateDropdown({
@@ -1371,7 +1371,7 @@ local AutoBuyEggDropdown = AutoBuyTab:CreateDropdown({
         SelectedEggs = {Options}
     end
 		print("Selected Eggs:", table.concat(SelectedEggs, ", "))
-end,
+	end,
 })
 
 --Auto Buy Travel Merchant
