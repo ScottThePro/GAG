@@ -1,5 +1,5 @@
 --version
---2.63
+--2.70
 local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 
 --// Services
@@ -49,6 +49,13 @@ local AutoBuyGardenShop = false
 local AutoBuyGardenShopThread = false
 local SelectedGardenShopItems = {}
 local GardenShopStock = {}
+--Christmas event variables
+local AutoBuyChristmas = false
+local AutoBuyChristmasThread = false
+local SelectedChristmasItems = {}
+local SelectedChristmasName = {}
+local AutoSubmitChristmasFruit = false
+local AutoSubmitChristmasFruitThread = nil
 --Trader Event variables
 local AutoSubmitTraderEvent = false
 local AutoSubmitTraderEventThread = false
@@ -1023,6 +1030,113 @@ local function AutoSubmitTraderEventLoop()
     end)
 end
 
+-------------------------------------------------------------------------------Christmas Event
+
+local function GetChristmasEventShopItems()
+	local dataFolder = ReplicatedStorage:FindFirstChild("Data")
+	if not dataFolder then
+		warn("Data folder not found")
+		return {}
+	end
+
+	local christmasFolder = dataFolder:FindFirstChild("ChristmasEvent")
+	if not christmasFolder then
+		warn("ChristmasEvent folder not found")
+		return {}
+	end
+
+	local module = christmasFolder:FindFirstChild("ChristmasGiftRewardsData")
+	if not module then
+		warn("ChristmasGiftRewardsData not found")
+		return {}
+	end
+
+	-- Require the module safely
+	local success, data = pcall(require, module)
+	if not success or type(data) ~= "table" then
+		warn("Failed to require ChristmasGiftRewardsData")
+		return {}
+	end
+
+	-- Collect event shop item names
+	local items = {}
+
+	for _, rewardTable in pairs(data) do
+		if type(rewardTable) == "table" then
+			-- Look for EventShopKey inside this reward entry
+			local shopItem = rewardTable.EventShopKey
+			if shopItem then
+				table.insert(items, shopItem)
+			end
+		end
+	end
+
+	-- Add "All Items" to the top of the list
+	table.insert(items, 1, "All Items")
+	
+	table.sort(items)
+	return items
+end
+--Buy christmas event item
+local function BuyChristmasEventItem(itemName)
+	if not itemName or itemName == "" then return end
+	if GameEvents:FindFirstChild("BuyEventShopStock") then
+		GameEvents.BuyEventShopStock:FireServer(itemName, ChristmasShopName)
+	end
+end
+
+--auto buy christmas event
+local function BuyAllSelectedChristmasEventItems()
+	if AutoBuyChristmasItemsThread then
+		task.cancel(AutoBuyChristmasItemsThread)
+	end
+
+	AutoBuyChristmasItemsThread = task.spawn(function()
+		while AutoBuyChristmasItems do
+			local itemsToBuy = {}
+
+			if table.find(SelectedChristmasItems, "All Items") then
+				itemsToBuy = GetEventShopItems()
+			else
+				itemsToBuy = SelectedChristmasItems
+			end
+
+			for _, itemName in ipairs(itemsToBuy) do
+				if not AutoBuyChristmasItems then return end
+				if itemName == "All Items" then continue end
+				BuyChristmasEventItem(itemName)
+				task.wait(0.2) -- delay between purchases
+			end
+
+			task.wait(3) -- delay before next loop
+		end
+	end)
+end
+
+-- Function to submit all fruit
+local function SubmitAllChristmasFruit()
+	if ReplicatedStorage:FindFirstChild("GameEvents") and 
+	   ReplicatedStorage.GameEvents:FindFirstChild("ChristmasEvent") and 
+	   ReplicatedStorage.GameEvents.ChristmasEvent:FindFirstChild("Christmas_SubmitAll") then
+	   
+		ReplicatedStorage.GameEvents.ChristmasEvent.Christmas_SubmitAll:FireServer(LocalPlayer)
+	end
+end
+
+-- Threaded auto-submit function
+local function AutoSubmitAllChristmasFruit()
+	if AutoSubmitChristmasFruitThread then
+		task.cancel(AutoSubmitChristmasFruitThread)
+	end
+
+	AutoSubmitChristmasFruitThread = task.spawn(function()
+		while AutoSubmitChristmasFruit do
+			SubmitAllChristmasFruit()
+			task.wait(1) -- submit every 1 second, adjust as needed
+		end
+	end)
+end
+
 -------------------------------------------------------------------------------Garden functions
 -- Safe check if plant can be harvested
 local function CanHarvest(Plant)
@@ -1344,8 +1458,51 @@ local AutoBuyGardenShopDropdown = AutoBuyTab:CreateDropdown({
 end,
 })
 
---------------------------------------------------------------------Smithing Event Section-------------------------------------------------------------------------------------------------
+--------------------------------------------------------------------Event Section-------------------------------------------------------------------------------------------------
 local EventTab = Window:CreateTab("Event", 4483362458) -- Title, Image
+--Christmas event section 07-12-25
+local EventSection = EventTab:CreateSection("Christmas Event")
+--Auto submit fruit event
+local AutoSubmitChristmasToggle = EventTab:CreateToggle({
+	Name = "Auto Submit Christmas Fruit",
+	Flag = "AutoSubmitChristmasFruit",
+	CurrentValue = false,
+	Callback = function(value)
+		AutoSubmitChristmasFruit = value
+		if AutoSubmitChristmasFruit then
+			AutoSubmitAllChristmasFruit()
+		elseif AutoSubmitChristmasFruitThread then
+			task.cancel(AutoSubmitChristmasFruitThread)
+		end
+	end,
+})
+--Auto Buy Event toggle
+--Christmas event shop drop down
+local AutoChristmasEventDropdown = EventTab:CreateDropdown({
+	Name = "Select Christmas Items",
+	Options = GetEventShopItems(),
+	CurrentOption = {},
+	MultipleOptions = true,
+	Flag = "AutoChristmasEventDropdown",
+	Callback = function(selectedOptions)
+		SelectedChristmasItems = selectedOptions or {}
+	end,
+})
+--Auto buy toggle
+local AutoChristmasEventToggle = EventTab:CreateToggle({
+	Name = "Auto Buy Christmas Items",
+	Flag = "AutoChristmasEventToggle",
+	CurrentValue = false,
+	Callback = function(value)
+		AutoBuyChristmasItems = value
+		if AutoBuyChristmasItems and #SelectedChristmasItems > 0 then
+			BuyAllSelectedChristmasEventItems()
+		elseif not AutoBuyChristmasItems and AutoBuyChristmasItemsThread then
+			task.cancel(AutoBuyChristmasItemsThread)
+		end
+	end,
+})
+
 --Trader event section 11-23-25
 local TraderEventSection = EventTab:CreateSection("Trader Event")
 --Auto submit gear to the event toggle
@@ -1369,7 +1526,7 @@ local AutoSubmitTraderEventToggle = EventTab:CreateToggle({
     end
 })
 
---AEvent section
+--Smithing Event
 local EventSection = EventTab:CreateSection("Smithing Event")
 --Auto Buy Event toggle
 --Auto submit gear to the event drop down menu
