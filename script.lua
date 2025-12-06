@@ -1,5 +1,5 @@
 --version
---2.71
+--2.72
 local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 
 --// Services
@@ -1471,7 +1471,7 @@ local AutoSubmitChristmasToggle = EventTab:CreateToggle({
 		AutoSubmitChristmasFruit = value
 		if AutoSubmitChristmasFruit then
 			AutoSubmitAllChristmasFruit()
-		else if AutoSubmitChristmasFruitThread then
+		elseif AutoSubmitChristmasFruitThread then
 			task.cancel(AutoSubmitChristmasFruitThread)
 		end
 	end,
@@ -1501,7 +1501,7 @@ local AutoChristmasEventToggle = EventTab:CreateToggle({
 		AutoBuyChristmasItems = value
 		if AutoBuyChristmasItems and #SelectedChristmasItems > 0 then
 			BuyAllSelectedChristmasEventItems()
-		else if not AutoBuyChristmasItems and AutoBuyChristmasItemsThread then
+		elseif not AutoBuyChristmasItems and AutoBuyChristmasItemsThread then
 			task.cancel(AutoBuyChristmasItemsThread)
 		end
 	end,
