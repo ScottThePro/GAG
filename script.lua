@@ -1780,6 +1780,7 @@ local HarvestFruitDropdown = GardenTab:CreateDropdown({
     Options = GetAllSeedNames(), -- populate with seed names
     CurrentOption = {},
     MultipleOptions = true,
+	Flag = "AutoHarvestDropDown", 
     Callback = function(Options)
         if table.find(Options, "All Fruits") then
             -- Harvest everything
