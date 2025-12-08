@@ -1,5 +1,5 @@
 --version
---2.8
+--2.81
 local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 
 --// Services
@@ -168,7 +168,7 @@ local function GetFarms()
 end
 
 local function GetFarmOwner(Farm)
-    local Important = Farm:FindFirstChild("Important")
+    local Important = Farms:FindFirstChild("Important")
     local Data = Important and Important:FindFirstChild("Data")
     local Owner = Data and Data:FindFirstChild("Owner")
     return Owner and Owner.Value or nil
