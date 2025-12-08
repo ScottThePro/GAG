@@ -1,5 +1,5 @@
 --version
---2.83
+--2.84
 local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 
 --// Services
@@ -199,9 +199,36 @@ end
 -- Get all crops in your farm
 local function GetAllFarmCrops()
     local MyFarm = GetMyFarm()
-    if not MyFarm then return {} end
+    if not MyFarm then 
+        print("➡️ No farm returned!")
+        return {} 
+    end
+
+    print("➡️ MyFarm =", MyFarm.Name)
+
+    -- debug list children
+    for _, v in ipairs(MyFarm:GetChildren()) do
+        print("➡️ Farm child:", v.Name)
+    end
+
     local Important = MyFarm:FindFirstChild("Important")
+    print("➡️ Important =", Important)
+
+    if Important then
+        for _, v in ipairs(Important:GetChildren()) do
+            print("➡️ Important child:", v.Name)
+        end
+    end
+
     local PlantsPhysical = Important and Important:FindFirstChild("Plants_Physical")
+    print("➡️ PlantsPhysical =", PlantsPhysical)
+
+    if PlantsPhysical then
+        for _, crop in ipairs(PlantsPhysical:GetChildren()) do
+            print("➡️ Physical plant found:", crop.Name)
+        end
+    end
+
     local Crops = {}
     CollectCropsFromParent(PlantsPhysical, Crops)
     return Crops
