@@ -1,5 +1,5 @@
 --version
---2.81
+--2.82
 local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 
 --// Services
@@ -21,7 +21,7 @@ local GameInfo = MarketplaceService:GetProductInfo(game.PlaceId)
 --// 
 local GameEvents = ReplicatedStorage.GameEvents
 local CraftingEvent = GameEvents.CraftingGlobalObjectService
-local Farms = workspace.Farm
+local Farms = workspace:WaitForChild("Farm")
 
 --global variables
 -- seed variables 
@@ -168,7 +168,7 @@ local function GetFarms()
 end
 
 local function GetFarmOwner(Farm)
-    local Important = Farms:FindFirstChild("Important")
+    local Important = Farm:FindFirstChild("Important")
     local Data = Important and Important:FindFirstChild("Data")
     local Owner = Data and Data:FindFirstChild("Owner")
     return Owner and Owner.Value or nil
@@ -176,6 +176,8 @@ end
 
 local function GetMyFarm()
     for _, Farm in ipairs(GetFarms()) do
+    	print("Checking farm:", Farm.Name)
+    	print("Owner found:", GetFarmOwner(Farm))
         if GetFarmOwner(Farm) == LocalPlayer.Name then
             return Farm
         end
