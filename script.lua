@@ -1,5 +1,5 @@
 --version
---2.77
+--2.8
 local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 
 --// Services
@@ -206,21 +206,60 @@ local function GetAllFarmCrops()
 end
 
 local function StartAutoHarvest()
-    if AutoHarvestThread then task.cancel(AutoHarvestThread) end
+    print("[AUTO HARVEST] Starting function...")
+
+    if AutoHarvestThread then
+        print("[AUTO HARVEST] Previous thread found, cancelling...")
+        task.cancel(AutoHarvestThread)
+    end
 
     AutoHarvestThread = task.spawn(function()
         while AutoHarvest do
+            print("[AUTO HARVEST] Loop tick")
+
             local crops = GetAllFarmCrops()
-            for _, crop in ipairs(crops) do
-                if crop and crop.Parent and table.find(SelectedFruits, crop.Name) then
-                    -- Harvest only selected fruits
-                    CollectRemote:FireServer({crop})
+            print("[AUTO HARVEST] Crops found:", crops and #crops or "nil")
+
+            for index, crop in ipairs(crops) do
+                print("\n[AUTO HARVEST] Checking crop:", index, crop)
+
+                if not crop then
+                    print("[AUTO HARVEST] ❌ Crop is nil, skipping")
+                    continue
+                end
+
+                if not crop.Parent then
+                    print("[AUTO HARVEST] ❌ Crop has no parent (destroyed), skipping:", crop)
+                    continue
+                end
+
+                print("[AUTO HARVEST] Crop name:", crop.Name)
+
+                -- Check if selected
+                if table.find(SelectedFruits, crop.Name) then
+                    print("[AUTO HARVEST] Match! Harvesting:", crop.Name)
+                    print("[AUTO HARVEST] Firing remote with:", crop)
+
+                    -- Fire remote
+                    local success, err = pcall(function()
+                        CollectRemote:FireServer({ crop })
+                    end)
+
+                    if success then
+                        print("[AUTO HARVEST] Remote fired successfully.")
+                    else
+                        print("[AUTO HARVEST] ❌ Remote error:", err)
+                    end
+                else
+                    print("[AUTO HARVEST] ❌ Not selected, skipping:", crop.Name)
                 end
             end
+
             task.wait(1)
         end
     end)
 end
+
 
 
 --this gets seeds that we have in our backpack and stores them in the OwnedSeeds table
