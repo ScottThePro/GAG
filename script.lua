@@ -1,5 +1,5 @@
 --version
---2.86
+--2.87
 local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 
 --// Services
@@ -227,29 +227,53 @@ local function GetAllFarmCrops()
     print("➡️ Total crops found:", #Crops)
     return Crops
 end
-local function StartAutoHarvest()
-    if AutoHarvestThread then
-        task.cancel(AutoHarvestThread)
+local function GetAllHarvestableFruits()
+    local MyFarm = GetMyFarm()
+    if not MyFarm then return {} end
+
+    local Important = MyFarm:FindFirstChild("Important")
+    local PlantsPhysical = Important and Important:FindFirstChild("Plants_Physical")
+    if not PlantsPhysical then return {} end
+
+    local Harvestables = {}
+
+    for _, plant in ipairs(PlantsPhysical:GetChildren()) do
+        local FruitsFolder = plant:FindFirstChild("Fruits")
+        if FruitsFolder then
+            for _, fruit in ipairs(FruitsFolder:GetChildren()) do
+                if table.find(SelectedFruits, fruit.Name) then
+                    table.insert(Harvestables, fruit)
+                end
+            end
+        end
     end
+
+    return Harvestables
+end
+
+local function StartAutoHarvest()
+    if AutoHarvestThread then task.cancel(AutoHarvestThread) end
 
     AutoHarvestThread = task.spawn(function()
         while AutoHarvest do
-            local crops = GetAllFarmCrops()
-            print("Crops found:", #crops)
+            local fruits = GetAllHarvestableFruits()
+            print("Fruits found:", #fruits)
 
-            for _, crop in ipairs(crops) do
-                if crop.Parent and table.find(SelectedFruits, crop.Name) then
-                    print("Harvesting:", crop.Name)
+            for _, fruit in ipairs(fruits) do
+                if fruit and fruit.Parent then
                     local success, err = pcall(function()
-                        CollectRemote:FireServer({ crop })
+                        CollectRemote:FireServer({ fruit })
                     end)
-                    if not success then
-                        warn("Failed to harvest crop:", err)
+                    if success then
+                        print("✅ Harvested:", fruit.Name)
+                    else
+                        warn("❌ Failed to harvest:", fruit.Name, err)
                     end
-                    task.wait(0.2) -- small delay between harvests
+                    task.wait(0.2)
                 end
             end
-            task.wait(1) -- delay for next loop tick
+
+            task.wait(1)
         end
     end)
 end
