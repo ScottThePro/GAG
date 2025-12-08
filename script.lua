@@ -1,5 +1,5 @@
 --version
---2.84
+--2.86
 local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 
 --// Services
@@ -228,56 +228,28 @@ local function GetAllFarmCrops()
     return Crops
 end
 local function StartAutoHarvest()
-    print("[AUTO HARVEST] Starting function...")
-
     if AutoHarvestThread then
-        print("[AUTO HARVEST] Previous thread found, cancelling...")
         task.cancel(AutoHarvestThread)
     end
 
     AutoHarvestThread = task.spawn(function()
         while AutoHarvest do
-            print("[AUTO HARVEST] Loop tick")
-
             local crops = GetAllFarmCrops()
-            print("[AUTO HARVEST] Crops found:", crops and #crops or "nil")
+            print("Crops found:", #crops)
 
-            for index, crop in ipairs(crops) do
-                print("\n[AUTO HARVEST] Checking crop:", index, crop)
-
-                if not crop then
-                    print("[AUTO HARVEST] ❌ Crop is nil, skipping")
-                    continue
-                end
-
-                if not crop.Parent then
-                    print("[AUTO HARVEST] ❌ Crop has no parent (destroyed), skipping:", crop)
-                    continue
-                end
-
-                print("[AUTO HARVEST] Crop name:", crop.Name)
-
-                -- Check if selected
-                if table.find(SelectedFruits, crop.Name) then
-                    print("[AUTO HARVEST] Match! Harvesting:", crop.Name)
-                    print("[AUTO HARVEST] Firing remote with:", crop)
-
-                    -- Fire remote
+            for _, crop in ipairs(crops) do
+                if crop.Parent and table.find(SelectedFruits, crop.Name) then
+                    print("Harvesting:", crop.Name)
                     local success, err = pcall(function()
                         CollectRemote:FireServer({ crop })
                     end)
-
-                    if success then
-                        print("[AUTO HARVEST] Remote fired successfully.")
-                    else
-                        print("[AUTO HARVEST] ❌ Remote error:", err)
+                    if not success then
+                        warn("Failed to harvest crop:", err)
                     end
-                else
-                    print("[AUTO HARVEST] ❌ Not selected, skipping:", crop.Name)
+                    task.wait(0.2) -- small delay between harvests
                 end
             end
-
-            task.wait(1)
+            task.wait(1) -- delay for next loop tick
         end
     end)
 end
