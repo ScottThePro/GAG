@@ -199,41 +199,34 @@ end
 -- Get all crops in your farm
 local function GetAllFarmCrops()
     local MyFarm = GetMyFarm()
-    if not MyFarm then 
-        print("➡️ No farm returned!")
-        return {} 
-    end
-
-    print("➡️ MyFarm =", MyFarm.Name)
-
-    -- debug list children
-    for _, v in ipairs(MyFarm:GetChildren()) do
-        print("➡️ Farm child:", v.Name)
+    if not MyFarm then
+        print("❌ No farm found for local player")
+        return {}
     end
 
     local Important = MyFarm:FindFirstChild("Important")
-    print("➡️ Important =", Important)
-
-    if Important then
-        for _, v in ipairs(Important:GetChildren()) do
-            print("➡️ Important child:", v.Name)
-        end
+    if not Important then
+        print("❌ Important folder not found")
+        return {}
     end
 
-    local PlantsPhysical = Important and Important:FindFirstChild("Plants_Physical")
-    print("➡️ PlantsPhysical =", PlantsPhysical)
-
-    if PlantsPhysical then
-        for _, crop in ipairs(PlantsPhysical:GetChildren()) do
-            print("➡️ Physical plant found:", crop.Name)
-        end
+    local PlantsPhysical = Important:FindFirstChild("Plants_Physical")
+    if not PlantsPhysical then
+        print("❌ Plants_Physical folder not found")
+        return {}
     end
 
     local Crops = {}
-    CollectCropsFromParent(PlantsPhysical, Crops)
+    for _, crop in ipairs(PlantsPhysical:GetChildren()) do
+        if crop:FindFirstChild("Item_String") then
+            table.insert(Crops, crop)
+            print("✅ Crop found:", crop.Name)
+        end
+    end
+
+    print("➡️ Total crops found:", #Crops)
     return Crops
 end
-
 local function StartAutoHarvest()
     print("[AUTO HARVEST] Starting function...")
 
