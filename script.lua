@@ -80,6 +80,11 @@ local SelectedPetName = {}
 local AutoHarvest = false
 local HarvestIgnores = {}
 local HarvestableFruits = {}
+local AutoHarvestThread
+local SelectedFruits = {} 
+-- Remote event
+local CollectRemote = ReplicatedStorage:WaitForChild("GameEvents"):WaitForChild("Crops"):WaitForChild("Collect")
+-- Variables
 
 --local player variables
 local OwnedSeeds = {}
@@ -156,44 +161,68 @@ local function CollectSeedsFromParent(Parent, Seeds: table)
         }
 	end
 end
+
 --this gets fruit from backpack fruit have a child called Item_String which is how we tell fruits in out backpack
 local function GetFarms()
 	return Farms:GetChildren()
 end
 
-local function GetFarmOwner(Farm: Folder): string
-	local Important = Farm.Important
-	local Data = Important.Data
-	local Owner = Data.Owner
-
-	return Owner.Value
+local function GetFarmOwner(Farm)
+    local Important = Farm:FindFirstChild("Important")
+    local Data = Important and Important:FindFirstChild("Data")
+    local Owner = Data and Data:FindFirstChild("Owner")
+    return Owner and Owner.Value or nil
 end
 
-local function GetFarm(PlayerName: string): Folder?
-	local Farms = GetFarms()
-	for _, Farm in next, Farms do
-		local Owner = GetFarmOwner(Farm)
-		if Owner == PlayerName then
-			return Farm
-		end
-	end
-    return
+local function GetMyFarm()
+    for _, Farm in ipairs(GetFarms()) do
+        if GetFarmOwner(Farm) == LocalPlayer.Name then
+            return Farm
+        end
+    end
+    return nil
 end
 
 
-local MyFarm = GetFarm(LocalPlayer.Name)
-local MyImportant = MyFarm.Important
-local PlantLocations = MyImportant.Plant_Locations
-local PlantsPhysical = MyImportant.Plants_Physical
-
-local function CollectCropsFromParent(Parent, Crops: table)
-	for _, Tool in next, Parent:GetChildren() do
-		local Name = Tool:FindFirstChild("Item_String")
-		if not Name then continue end
-
-		table.insert(Crops, Tool)
-	end
+-- Collect crops from a folder
+local function CollectCropsFromParent(Parent, Crops)
+    if not Parent then return end
+    for _, Tool in ipairs(Parent:GetChildren()) do
+        if Tool:FindFirstChild("Item_String") then
+            table.insert(Crops, Tool)
+        end
+    end
 end
+
+-- Get all crops in your farm
+local function GetAllFarmCrops()
+    local MyFarm = GetMyFarm()
+    if not MyFarm then return {} end
+    local Important = MyFarm:FindFirstChild("Important")
+    local PlantsPhysical = Important and Important:FindFirstChild("Plants_Physical")
+    local Crops = {}
+    CollectCropsFromParent(PlantsPhysical, Crops)
+    return Crops
+end
+
+local function StartAutoHarvest()
+    if AutoHarvestThread then task.cancel(AutoHarvestThread) end
+
+    AutoHarvestThread = task.spawn(function()
+        while AutoHarvest do
+            local crops = GetAllFarmCrops()
+            for _, crop in ipairs(crops) do
+                if crop and crop.Parent and table.find(SelectedFruits, crop.Name) then
+                    -- Harvest only selected fruits
+                    CollectRemote:FireServer({crop})
+                end
+            end
+            task.wait(1)
+        end
+    end)
+end
+
+
 --this gets seeds that we have in our backpack and stores them in the OwnedSeeds table
 local function GetOwnedSeeds(): table
 	local Character = LocalPlayer.Character
@@ -1243,37 +1272,6 @@ local function HarvestPlants()
 end
 
 
--- AUTO-HARVEST LOOP
-function AutoHarvestLoop()
-    -- Cancel any existing loop
-    if AutoHarvestThread then
-        task.cancel(AutoHarvestThread)
-        AutoHarvestThread = nil
-    end
-
-    AutoHarvestThread = task.spawn(function()
-        while AutoHarvest do
-            local plants = GetHarvestablePlants(true)
-
-            for _, plant in ipairs(plants) do
-                if not AutoHarvest then return end  -- stop instantly
-                if IsFruitWanted(plant) then
-                    local ok, err = pcall(function()
-                        HarvestPlant(plant)
-                    end)
-
-                    if not ok then
-                        warn("AutoHarvest error:", err)
-                    end
-
-                    task.wait(0.15)
-                end
-            end
-
-            task.wait(0.3)
-        end
-    end)
-end
 
 -------------------------------------------------------------------------------Draw our options
 -- Auto Buy Tab
@@ -1741,31 +1739,32 @@ local HarvestFruitDropdown = GardenTab:CreateDropdown({
     Options = GetAllSeedNames(), -- populate with seed names
     CurrentOption = {},
     MultipleOptions = true,
-    Callback = function(selectedList)
-        -- Reset table
-        HarvestableFruits = {}
-
-        -- Fill table based on selections
-        for _, fruitName in ipairs(selectedList) do
-            HarvestableFruits[fruitName] = true
+    Callback = function(Options)
+        if table.find(Options, "All Fruits") then
+            -- Harvest everything
+            SelectedFruits = {}
+            for _, crop in ipairs(GetAllFarmCrops()) do
+                table.insert(SelectedFruits, crop.Name)
+            end
+        else
+            SelectedFruits = Options
         end
-
-        print("Updated Harvestable Fruits:")
-        for fruit, _ in pairs(HarvestableFruits) do
-            print(" -", fruit)
-        end
-    end
+    end,
 })
-local HarvestToggle = GardenTab:CreateToggle({
-    Name = "Auto Harvest",
+
+-- Example: toggle integration
+local AutoHarvestToggle = GardenTab:CreateToggle({
+    Name = "Auto Harvest Selected Fruits",
     CurrentValue = false,
     Flag = "AutoHarvestToggle",
     Callback = function(value)
         AutoHarvest = value
-        if value then
-            AutoHarvestLoop()
+        if AutoHarvest then
+            StartAutoHarvest()
+        elseif AutoHarvestThread then
+            task.cancel(AutoHarvestThread)
         end
-    end
+    end,
 })
 
 
